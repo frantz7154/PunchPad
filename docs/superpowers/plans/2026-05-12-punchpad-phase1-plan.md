@@ -9,6 +9,7 @@
 **Tech Stack:** Next.js 16, TypeScript, Tailwind v4, shadcn/ui, Prisma 6, PostgreSQL 16, NextAuth v5 (Auth.js), `@node-rs/argon2`, Resend + Nodemailer, pino, Zod, Vitest + Testcontainers, Playwright, supercronic, Caddy 2, Docker Compose.
 
 **Pinned decisions (from spec Section 12 open items):**
+
 - Accent color: saturated teal — `--accent: #14b8a6` (dark) / `#0d9488` (light).
 - Email transport default: `EMAIL_TRANSPORT=resend` (SMTP path still implemented for parity).
 - Pay-period preset: semi-monthly (1st–15th, 16th–end of month).
@@ -25,6 +26,7 @@ End state: an empty Next.js 16 + TS app boots locally, passes `pnpm lint`, `pnpm
 ### Task 0.1: Initialize git and commit the spec
 
 **Files:**
+
 - Create: `C:\Users\Jared.Reid\punchpad\.gitignore`
 - Create: `C:\Users\Jared.Reid\punchpad\README.md`
 
@@ -82,6 +84,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ### Task 0.2: Scaffold Next.js 16 + TypeScript + Tailwind v4
 
 **Files:**
+
 - Create: `package.json`, `tsconfig.json`, `next.config.ts`, `src/app/page.tsx`, `src/app/layout.tsx`, `src/app/globals.css`, `postcss.config.mjs`, `.npmrc`
 
 - [ ] **Step 1: Run the scaffolder**
@@ -144,6 +147,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ### Task 0.3: Add brand fonts and theme tokens
 
 **Files:**
+
 - Modify: `src/app/layout.tsx`
 - Modify: `src/app/globals.css`
 
@@ -168,7 +172,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${mono.variable} ${outfit.variable} font-sans antialiased`}>
+      <body
+        className={`${inter.variable} ${mono.variable} ${outfit.variable} font-sans antialiased`}
+      >
         {children}
       </body>
     </html>
@@ -235,10 +241,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   --color-danger: var(--danger);
 }
 
-html, body { background: var(--bg); color: var(--text); }
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
@@ -261,6 +273,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ### Task 0.4: Initialize shadcn/ui
 
 **Files:**
+
 - Create: `components.json`, `src/components/ui/*` (button, input, etc. — generated)
 - Create: `src/lib/utils.ts`
 
@@ -294,6 +307,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ### Task 0.5: Set up Vitest with unit + integration projects
 
 **Files:**
+
 - Create: `vitest.config.ts`
 - Create: `tests/unit/.gitkeep`
 - Create: `tests/integration/.gitkeep`
@@ -393,6 +407,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ### Task 0.6: Set up Playwright E2E
 
 **Files:**
+
 - Create: `playwright.config.ts`
 - Create: `tests/e2e/sanity.spec.ts`
 
@@ -420,9 +435,7 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-  ],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: process.env.PLAYWRIGHT_NO_WEBSERVER
     ? undefined
     : {
@@ -467,6 +480,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ### Task 0.7: Strict TS + ESLint hardening + lint script
 
 **Files:**
+
 - Modify: `tsconfig.json`
 - Modify: `eslint.config.mjs` (or `.eslintrc.*` if scaffolder generated that)
 - Modify: `package.json`
@@ -533,6 +547,7 @@ End state: `lib/env.ts`, `lib/errors.ts`, `lib/time.ts`, `lib/logger.ts`, `lib/d
 ### Task 1.1: `lib/env.ts` with Zod validation
 
 **Files:**
+
 - Create: `src/lib/env.ts`
 - Create: `tests/unit/lib/env.test.ts`
 - Create: `.env.example`
@@ -633,11 +648,16 @@ const refined = baseSchema.superRefine((v, ctx) => {
     });
   }
   if (v.EMAIL_TRANSPORT === "resend" && !v.RESEND_API_KEY) {
-    ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "RESEND_API_KEY required for resend transport" });
+    ctx.addIssue({
+      code: "custom",
+      path: ["RESEND_API_KEY"],
+      message: "RESEND_API_KEY required for resend transport",
+    });
   }
   if (v.EMAIL_TRANSPORT === "smtp") {
     for (const k of ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"] as const) {
-      if (!v[k]) ctx.addIssue({ code: "custom", path: [k], message: `${k} required for smtp transport` });
+      if (!v[k])
+        ctx.addIssue({ code: "custom", path: [k], message: `${k} required for smtp transport` });
     }
   }
 });
@@ -654,9 +674,7 @@ export function buildEnv(source: Record<string, string | undefined>): Env {
 }
 
 export const env: Env =
-  process.env.SKIP_ENV_VALIDATION === "1"
-    ? (process.env as unknown as Env)
-    : buildEnv(process.env);
+  process.env.SKIP_ENV_VALIDATION === "1" ? (process.env as unknown as Env) : buildEnv(process.env);
 ```
 
 - [ ] **Step 5: Run tests â€” expect pass**
@@ -694,6 +712,7 @@ git commit -m "feat: zod-validated env (lib/env.ts)"
 ### Task 1.2: `lib/errors.ts` â€” AppError hierarchy
 
 **Files:**
+
 - Create: `src/lib/errors.ts`
 - Create: `tests/unit/lib/errors.test.ts`
 
@@ -704,8 +723,14 @@ git commit -m "feat: zod-validated env (lib/env.ts)"
 ```ts
 import { describe, it, expect } from "vitest";
 import {
-  AppError, UnauthorizedError, ForbiddenError, ValidationError,
-  ConflictError, NotFoundError, ServiceUnavailableError, toErrorEnvelope,
+  AppError,
+  UnauthorizedError,
+  ForbiddenError,
+  ValidationError,
+  ConflictError,
+  NotFoundError,
+  ServiceUnavailableError,
+  toErrorEnvelope,
 } from "@/lib/errors";
 
 describe("AppError hierarchy", () => {
@@ -736,7 +761,11 @@ describe("AppError hierarchy", () => {
   });
 
   it("toErrorEnvelope flattens AppError and preserves ValidationError details", () => {
-    expect(toErrorEnvelope(new ConflictError("X", "Y"))).toEqual({ ok: false, code: "X", message: "Y" });
+    expect(toErrorEnvelope(new ConflictError("X", "Y"))).toEqual({
+      ok: false,
+      code: "X",
+      message: "Y",
+    });
     const ve = new ValidationError("Bad input", { field: "clockInAt", reason: "future" });
     const env = toErrorEnvelope(ve);
     expect(env.code).toBe("VALIDATION");
@@ -744,7 +773,11 @@ describe("AppError hierarchy", () => {
   });
 
   it("toErrorEnvelope converts unknown error to INTERNAL", () => {
-    expect(toErrorEnvelope(new Error("boom"))).toEqual({ ok: false, code: "INTERNAL", message: "An unexpected error occurred." });
+    expect(toErrorEnvelope(new Error("boom"))).toEqual({
+      ok: false,
+      code: "INTERNAL",
+      message: "An unexpected error occurred.",
+    });
   });
 });
 ```
@@ -781,7 +814,10 @@ export class ForbiddenError extends AppError {
   }
 }
 export class ValidationError extends AppError {
-  constructor(userMessage: string, public readonly details?: unknown) {
+  constructor(
+    userMessage: string,
+    public readonly details?: unknown,
+  ) {
     super("VALIDATION", 400, userMessage);
   }
 }
@@ -829,6 +865,7 @@ git commit -m "feat: AppError hierarchy and envelope mapper"
 ### Task 1.3: `lib/time.ts` â€” TZ-aware time + injectable clock
 
 **Files:**
+
 - Create: `src/lib/time.ts`
 - Create: `tests/unit/lib/time.test.ts`
 
@@ -849,10 +886,15 @@ Update `package.json` `test:unit` script to: `"test:unit": "cross-env TZ=UTC vit
 import { describe, it, expect } from "vitest";
 import {
   FakeClock,
-  startOfDayInTz, endOfDayInTz,
-  startOfWeekInTz, endOfWeekInTz,
-  startOfSemiMonthlyInTz, endOfSemiMonthlyInTz,
-  durationMinutes, formatLocal, isoWeekKey,
+  startOfDayInTz,
+  endOfDayInTz,
+  startOfWeekInTz,
+  endOfWeekInTz,
+  startOfSemiMonthlyInTz,
+  endOfSemiMonthlyInTz,
+  durationMinutes,
+  formatLocal,
+  isoWeekKey,
 } from "@/lib/time";
 
 describe("FakeClock", () => {
@@ -902,22 +944,30 @@ describe("TZ boundaries (America/Chicago)", () => {
 
 describe("durationMinutes", () => {
   it("returns positive minutes for normal range", () => {
-    expect(durationMinutes(new Date("2026-05-12T08:00:00Z"), new Date("2026-05-12T09:30:00Z"))).toBe(90);
+    expect(
+      durationMinutes(new Date("2026-05-12T08:00:00Z"), new Date("2026-05-12T09:30:00Z")),
+    ).toBe(90);
   });
   it("returns 0 when out <= in", () => {
-    expect(durationMinutes(new Date("2026-05-12T09:00:00Z"), new Date("2026-05-12T08:00:00Z"))).toBe(0);
+    expect(
+      durationMinutes(new Date("2026-05-12T09:00:00Z"), new Date("2026-05-12T08:00:00Z")),
+    ).toBe(0);
   });
 });
 
 describe("formatLocal", () => {
   it("formats a UTC instant in a given TZ", () => {
-    expect(formatLocal(new Date("2026-05-12T13:00:00Z"), "America/Chicago", "yyyy-MM-dd HH:mm")).toBe("2026-05-12 08:00");
+    expect(
+      formatLocal(new Date("2026-05-12T13:00:00Z"), "America/Chicago", "yyyy-MM-dd HH:mm"),
+    ).toBe("2026-05-12 08:00");
   });
 });
 
 describe("isoWeekKey", () => {
   it("returns YYYY-Www form", () => {
-    expect(isoWeekKey(new Date("2026-05-12T13:00:00Z"), "America/Chicago")).toMatch(/^2026-W\d{2}$/);
+    expect(isoWeekKey(new Date("2026-05-12T13:00:00Z"), "America/Chicago")).toMatch(
+      /^2026-W\d{2}$/,
+    );
   });
 });
 ```
@@ -934,17 +984,37 @@ pnpm test:unit
 import { format as fnsFormat } from "date-fns";
 import { toZonedTime, fromZonedTime, format as fnsFormatTz } from "date-fns-tz";
 
-export interface Clock { now(): Date }
-export class SystemClock implements Clock { now() { return new Date(); } }
+export interface Clock {
+  now(): Date;
+}
+export class SystemClock implements Clock {
+  now() {
+    return new Date();
+  }
+}
 export class FakeClock implements Clock {
   private current: Date;
-  constructor(initial: Date) { this.current = new Date(initial); }
-  now() { return new Date(this.current); }
-  setNow(d: Date) { this.current = new Date(d); }
-  advanceMs(ms: number) { this.current = new Date(this.current.getTime() + ms); }
-  advanceSeconds(s: number) { this.advanceMs(s * 1000); }
-  advanceMinutes(m: number) { this.advanceMs(m * 60_000); }
-  advanceHours(h: number) { this.advanceMs(h * 3_600_000); }
+  constructor(initial: Date) {
+    this.current = new Date(initial);
+  }
+  now() {
+    return new Date(this.current);
+  }
+  setNow(d: Date) {
+    this.current = new Date(d);
+  }
+  advanceMs(ms: number) {
+    this.current = new Date(this.current.getTime() + ms);
+  }
+  advanceSeconds(s: number) {
+    this.advanceMs(s * 1000);
+  }
+  advanceMinutes(m: number) {
+    this.advanceMs(m * 60_000);
+  }
+  advanceHours(h: number) {
+    this.advanceMs(h * 3_600_000);
+  }
 }
 export const systemClock: Clock = new SystemClock();
 
@@ -952,7 +1022,16 @@ function parts(d: Date, tz: string) {
   const z = toZonedTime(d, tz);
   return { year: z.getFullYear(), month: z.getMonth(), day: z.getDate(), weekday: z.getDay() };
 }
-function buildLocal(year: number, month: number, day: number, tz: string, h = 0, m = 0, s = 0, ms = 0): Date {
+function buildLocal(
+  year: number,
+  month: number,
+  day: number,
+  tz: string,
+  h = 0,
+  m = 0,
+  s = 0,
+  ms = 0,
+): Date {
   return fromZonedTime(new Date(year, month, day, h, m, s, ms), tz);
 }
 
@@ -998,7 +1077,14 @@ export function isoWeekKey(d: Date, tz: string): string {
   const dayNr = (target.getUTCDay() + 6) % 7;
   target.setUTCDate(target.getUTCDate() - dayNr + 3);
   const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
-  const week = 1 + Math.round(((target.getTime() - firstThursday.getTime()) / 86_400_000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  const week =
+    1 +
+    Math.round(
+      ((target.getTime() - firstThursday.getTime()) / 86_400_000 -
+        3 +
+        ((firstThursday.getUTCDay() + 6) % 7)) /
+        7,
+    );
   return `${target.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 ```
@@ -1019,6 +1105,7 @@ git commit -m "feat: TZ-aware time helpers and injectable clock"
 ### Task 1.4: `lib/logger.ts` â€” pino logger with redaction
 
 **Files:**
+
 - Create: `src/lib/logger.ts`
 
 - [ ] **Step 1: Install pino**
@@ -1038,11 +1125,23 @@ const isDev = process.env.NODE_ENV !== "production";
 export const logger = pino({
   level: process.env.LOG_LEVEL ?? (isDev ? "debug" : "info"),
   redact: {
-    paths: ["password", "passwordHash", "*.password", "*.passwordHash", "headers.authorization", "headers.cookie"],
+    paths: [
+      "password",
+      "passwordHash",
+      "*.password",
+      "*.passwordHash",
+      "headers.authorization",
+      "headers.cookie",
+    ],
     censor: "[REDACTED]",
   },
   ...(isDev
-    ? { transport: { target: "pino-pretty", options: { colorize: true, translateTime: "HH:MM:ss.l" } } }
+    ? {
+        transport: {
+          target: "pino-pretty",
+          options: { colorize: true, translateTime: "HH:MM:ss.l" },
+        },
+      }
     : {}),
 });
 
@@ -1069,6 +1168,7 @@ git commit -m "feat: pino logger with redaction"
 ### Task 1.5: `lib/db.ts` â€” Prisma client singleton
 
 **Files:**
+
 - Create: `src/lib/db.ts`
 
 - [ ] **Step 1: Install Prisma**
@@ -1114,6 +1214,7 @@ git commit -m "feat: Prisma client singleton"
 ### Task 1.6: `lib/csv.ts` â€” CSV escape and row builder
 
 **Files:**
+
 - Create: `src/lib/csv.ts`
 - Create: `tests/unit/lib/csv.test.ts`
 
@@ -1126,15 +1227,25 @@ import { describe, it, expect } from "vitest";
 import { csvEscape, csvRow, csvHeader } from "@/lib/csv";
 
 describe("csvEscape", () => {
-  it("passes plain text through", () => { expect(csvEscape("alice")).toBe("alice"); });
-  it("quotes values with commas", () => { expect(csvEscape("a,b")).toBe('"a,b"'); });
-  it("doubles inner quotes", () => { expect(csvEscape('he said "hi"')).toBe('"he said ""hi"""'); });
-  it("quotes values with newlines", () => { expect(csvEscape("a\nb")).toBe('"a\nb"'); });
+  it("passes plain text through", () => {
+    expect(csvEscape("alice")).toBe("alice");
+  });
+  it("quotes values with commas", () => {
+    expect(csvEscape("a,b")).toBe('"a,b"');
+  });
+  it("doubles inner quotes", () => {
+    expect(csvEscape('he said "hi"')).toBe('"he said ""hi"""');
+  });
+  it("quotes values with newlines", () => {
+    expect(csvEscape("a\nb")).toBe('"a\nb"');
+  });
   it("null/undefined become empty", () => {
-    expect(csvEscape(null)).toBe(""); expect(csvEscape(undefined)).toBe("");
+    expect(csvEscape(null)).toBe("");
+    expect(csvEscape(undefined)).toBe("");
   });
   it("booleans format as true/false", () => {
-    expect(csvEscape(true)).toBe("true"); expect(csvEscape(false)).toBe("false");
+    expect(csvEscape(true)).toBe("true");
+    expect(csvEscape(false)).toBe("false");
   });
   it("Date becomes ISO 8601", () => {
     expect(csvEscape(new Date("2026-05-12T13:00:00Z"))).toBe("2026-05-12T13:00:00.000Z");
@@ -1194,7 +1305,6 @@ git commit -m "feat: CSV row/escape helpers"
 
 ---
 
-
 ## Milestone 2 â€” Data model
 
 End state: full Prisma schema deployed, partial unique index enforced at the DB layer, seed script creates the system user and the initial admin (from env), and an integration test proves "one open session per user" is enforced.
@@ -1202,6 +1312,7 @@ End state: full Prisma schema deployed, partial unique index enforced at the DB 
 ### Task 2.1: Prisma schema with all Phase 1 models
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 
 - [ ] **Step 1: Replace `prisma/schema.prisma` with the full schema**
@@ -1321,6 +1432,7 @@ git commit -m "feat: Prisma schema for Phase 1 models"
 ### Task 2.2: First migration
 
 **Files:**
+
 - Create: `prisma/migrations/<timestamp>_init/migration.sql`
 - Create: `docker-compose.dev.yml` (local Postgres for migrate dev)
 
@@ -1386,6 +1498,7 @@ git commit -m "feat: initial Prisma migration"
 ### Task 2.3: Raw migration for partial unique index
 
 **Files:**
+
 - Create: `prisma/migrations/<timestamp>_one_open_session/migration.sql`
 
 - [ ] **Step 1: Create the migration directory**
@@ -1425,6 +1538,7 @@ git commit -m "feat: partial unique index for one-open-session-per-user"
 ### Task 2.4: Seed script (system user + initial admin)
 
 **Files:**
+
 - Create: `prisma/seed.ts`
 - Modify: `package.json` (`prisma.seed`)
 
@@ -1497,8 +1611,13 @@ async function main() {
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
 ```
 
 - [ ] **Step 4: Run seed against local DB**
@@ -1521,6 +1640,7 @@ git commit -m "feat: seed script for system user and initial admin"
 ### Task 2.5: Integration test harness with Testcontainers
 
 **Files:**
+
 - Create: `tests/integration/helpers/db.ts`
 - Create: `tests/integration/db/schema.test.ts`
 
@@ -1571,8 +1691,12 @@ import { setupTestDb, type TestDb } from "../helpers/db";
 
 let db: TestDb;
 
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 
 describe("schema invariants", () => {
   it("partial unique index rejects a second open session for the same user", async () => {
@@ -1640,7 +1764,6 @@ git commit -m "test: schema-invariant integration tests via Testcontainers"
 
 ---
 
-
 ## Milestone 3 â€” Authentication
 
 End state: a user can log in at `/login`, get a JWT-backed NextAuth session that carries `id/email/name/role/timezone`, hit a protected page, and be blocked after 5 failed attempts in 15 min. The first login after admin reset forces a password change. E2E covers success + lockout.
@@ -1648,6 +1771,7 @@ End state: a user can log in at `/login`, get a JWT-backed NextAuth session that
 ### Task 3.1: Argon2 hash/verify wrappers + tests
 
 **Files:**
+
 - Create: `src/lib/password.ts`
 - Create: `tests/unit/lib/password.test.ts`
 
@@ -1723,6 +1847,7 @@ git commit -m "feat: argon2id password hash/verify"
 ### Task 3.2: Login-attempt lockout service
 
 **Files:**
+
 - Create: `src/features/auth/lockout.ts`
 - Create: `tests/integration/auth/lockout.test.ts`
 
@@ -1739,9 +1864,16 @@ import { FakeClock } from "@/lib/time";
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T10:00:00Z"));
 
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
-beforeEach(async () => { await db.prisma.loginAttempt.deleteMany(); clock.setNow(new Date("2026-05-12T10:00:00Z")); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
+beforeEach(async () => {
+  await db.prisma.loginAttempt.deleteMany();
+  clock.setNow(new Date("2026-05-12T10:00:00Z"));
+});
 
 describe("lockout", () => {
   it("allows login when no attempts logged", async () => {
@@ -1852,6 +1984,7 @@ git commit -m "feat: login lockout (5 failures / 15 min)"
 ### Task 3.3: NextAuth v5 configuration
 
 **Files:**
+
 - Create: `src/lib/auth.ts`
 - Create: `src/app/api/auth/[...nextauth]/route.ts`
 - Create: `src/types/next-auth.d.ts`
@@ -2021,6 +2154,7 @@ git commit -m "feat: NextAuth v5 credentials provider with JWT session"
 ### Task 3.4: Middleware protecting the (app) route group
 
 **Files:**
+
 - Create: `src/middleware.ts`
 
 - [ ] **Step 1: Write `src/middleware.ts`**
@@ -2062,6 +2196,7 @@ git commit -m "feat: auth middleware for app routes + mustChangePassword gate"
 ### Task 3.5: `/login` page UI
 
 **Files:**
+
 - Create: `src/app/(auth)/login/page.tsx`
 - Create: `src/app/(auth)/login/login-form.tsx`
 - Create: `src/app/(auth)/layout.tsx`
@@ -2119,14 +2254,30 @@ export function LoginForm() {
     >
       <div>
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required data-testid="login-email" />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          data-testid="login-email"
+        />
       </div>
       <div>
         <Label htmlFor="password">Password</Label>
-        <Input id="password" name="password" type="password" autoComplete="current-password" required data-testid="login-password" />
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          data-testid="login-password"
+        />
       </div>
       {error && (
-        <p data-testid="login-error" className="text-sm text-[var(--danger)]">{error}</p>
+        <p data-testid="login-error" className="text-sm text-[var(--danger)]">
+          {error}
+        </p>
       )}
       <Button type="submit" disabled={pending} data-testid="login-submit">
         {pending ? "Signing inâ€¦" : "Sign in"}
@@ -2170,6 +2321,7 @@ git commit -m "feat: /login page UI"
 ### Task 3.6: `mustChangePassword` interstitial
 
 **Files:**
+
 - Create: `src/app/(app)/account/change-password/page.tsx`
 - Create: `src/features/users/actions.ts`
 - Create: `src/features/users/service.ts`
@@ -2187,7 +2339,8 @@ export async function changeOwnPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  if (newPassword.length < 12) throw new ValidationError("New password must be at least 12 characters.");
+  if (newPassword.length < 12)
+    throw new ValidationError("New password must be at least 12 characters.");
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError();
   if (!(await verifyPassword(user.passwordHash, currentPassword))) {
@@ -2276,13 +2429,23 @@ export default function ChangePasswordPage() {
       >
         <div>
           <Label htmlFor="cur">Current password</Label>
-          <Input id="cur" name="currentPassword" type="password" required data-testid="cp-current" />
+          <Input
+            id="cur"
+            name="currentPassword"
+            type="password"
+            required
+            data-testid="cp-current"
+          />
         </div>
         <div>
           <Label htmlFor="new">New password (min 12 chars)</Label>
           <Input id="new" name="newPassword" type="password" required data-testid="cp-new" />
         </div>
-        {error && <p data-testid="cp-error" className="text-sm text-[var(--danger)]">{error}</p>}
+        {error && (
+          <p data-testid="cp-error" className="text-sm text-[var(--danger)]">
+            {error}
+          </p>
+        )}
         <Button type="submit" disabled={pending} data-testid="cp-submit">
           {pending ? "Savingâ€¦" : "Save"}
         </Button>
@@ -2302,6 +2465,7 @@ git commit -m "feat: mustChangePassword interstitial flow"
 ### Task 3.7: Playwright auth setup (JWT cookie injection)
 
 **Files:**
+
 - Create: `tests/e2e/auth.setup.ts`
 - Create: `tests/e2e/global-setup.ts`
 - Create: `tests/e2e/storage/.gitignore`
@@ -2317,7 +2481,10 @@ import { hash } from "@node-rs/argon2";
 export default async function globalSetup() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL must be set for E2E.");
-  execSync("pnpm exec prisma migrate deploy", { env: { ...process.env, DATABASE_URL: url }, stdio: "inherit" });
+  execSync("pnpm exec prisma migrate deploy", {
+    env: { ...process.env, DATABASE_URL: url },
+    stdio: "inherit",
+  });
   const prisma = new PrismaClient({ datasources: { db: { url } } });
   try {
     await prisma.auditLog.deleteMany();
@@ -2328,13 +2495,32 @@ export default async function globalSetup() {
     await prisma.user.upsert({
       where: { id: "system" },
       update: {},
-      create: { id: "system", email: "system@punchpad.internal", name: "System", passwordHash: "!disabled", role: "ADMIN", deactivatedAt: new Date() },
+      create: {
+        id: "system",
+        email: "system@punchpad.internal",
+        name: "System",
+        passwordHash: "!disabled",
+        role: "ADMIN",
+        deactivatedAt: new Date(),
+      },
     });
     await prisma.user.create({
-      data: { email: "admin@e2e.test", name: "E2E Admin", passwordHash: await hash("password1234aa"), role: "ADMIN", timezone: "America/Chicago" },
+      data: {
+        email: "admin@e2e.test",
+        name: "E2E Admin",
+        passwordHash: await hash("password1234aa"),
+        role: "ADMIN",
+        timezone: "America/Chicago",
+      },
     });
     await prisma.user.create({
-      data: { email: "emp@e2e.test", name: "E2E Employee", passwordHash: await hash("password1234aa"), role: "EMPLOYEE", timezone: "America/Chicago" },
+      data: {
+        email: "emp@e2e.test",
+        name: "E2E Employee",
+        passwordHash: await hash("password1234aa"),
+        role: "EMPLOYEE",
+        timezone: "America/Chicago",
+      },
     });
   } finally {
     await prisma.$disconnect();
@@ -2360,12 +2546,32 @@ async function storageStateFor(email: string, file: string) {
     salt: "authjs.session-token",
     secret: SECRET,
     token: {
-      id: user.id, email: user.email, name: user.name, role: user.role,
-      timezone: user.timezone, mustChangePassword: user.mustChangePassword,
-      sub: user.id, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 30 * 24 * 3600,
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      timezone: user.timezone,
+      mustChangePassword: user.mustChangePassword,
+      sub: user.id,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 30 * 24 * 3600,
     },
   });
-  return { cookies: [{ name: "authjs.session-token", value: token, domain: "localhost", path: "/", expires: -1, httpOnly: true, secure: false, sameSite: "Lax" as const }], origins: [] };
+  return {
+    cookies: [
+      {
+        name: "authjs.session-token",
+        value: token,
+        domain: "localhost",
+        path: "/",
+        expires: -1,
+        httpOnly: true,
+        secure: false,
+        sameSite: "Lax" as const,
+      },
+    ],
+    origins: [],
+  };
 }
 
 setup("authenticate admin", async () => {
@@ -2429,6 +2635,7 @@ git commit -m "test: Playwright global setup and JWT cookie auth setup"
 ### Task 3.8: E2E â€” login success + lockout
 
 **Files:**
+
 - Create: `tests/e2e/auth/login.spec.ts`
 
 - [ ] **Step 1: Write `tests/e2e/auth/login.spec.ts`**
@@ -2457,7 +2664,9 @@ test.describe("login", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("5 failures triggers lockout (6th attempt is also rejected even with right password)", async ({ page }) => {
+  test("5 failures triggers lockout (6th attempt is also rejected even with right password)", async ({
+    page,
+  }) => {
     for (let i = 0; i < 5; i++) {
       await page.goto("/login");
       await page.getByTestId("login-email").fill("emp@e2e.test");
@@ -2493,7 +2702,6 @@ git commit -m "test: e2e login + lockout"
 
 ---
 
-
 ## Milestone 4 â€” Attendance services
 
 End state: pure business-logic functions in `features/attendance/service.ts` for clock in, clock out, employee self-edit (7-day window), admin edit, admin delete, with audit-log writes on every mutation. Server actions in `features/attendance/actions.ts` expose them to UI. All paths covered by integration tests with a real Postgres.
@@ -2501,6 +2709,7 @@ End state: pure business-logic functions in `features/attendance/service.ts` for
 ### Task 4.1: Attendance service signatures + types
 
 **Files:**
+
 - Create: `src/features/attendance/types.ts`
 - Create: `src/features/attendance/service.ts` (stubs)
 
@@ -2555,17 +2764,26 @@ export async function clockOut(_d: ServiceDeps, _userId: string): Promise<TimeSe
   throw new Error("not implemented");
 }
 export async function editOwnSession(
-  _d: ServiceDeps, _userId: string, _sessionId: string, _patch: SessionPatch,
+  _d: ServiceDeps,
+  _userId: string,
+  _sessionId: string,
+  _patch: SessionPatch,
 ): Promise<TimeSession> {
   throw new Error("not implemented");
 }
 export async function adminEditSession(
-  _d: ServiceDeps, _adminId: string, _sessionId: string, _patch: SessionPatch,
+  _d: ServiceDeps,
+  _adminId: string,
+  _sessionId: string,
+  _patch: SessionPatch,
 ): Promise<TimeSession> {
   throw new Error("not implemented");
 }
 export async function adminDeleteSession(
-  _d: ServiceDeps, _adminId: string, _sessionId: string, _reason: string,
+  _d: ServiceDeps,
+  _adminId: string,
+  _sessionId: string,
+  _reason: string,
 ): Promise<void> {
   throw new Error("not implemented");
 }
@@ -2581,6 +2799,7 @@ git commit -m "feat(attendance): types and service stubs"
 ### Task 4.2: `clockIn` service + audit + tests
 
 **Files:**
+
 - Modify: `src/features/attendance/service.ts`
 - Create: `tests/integration/attendance/clock-in.test.ts`
 
@@ -2598,8 +2817,12 @@ import { hash } from "@node-rs/argon2";
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T13:00:00Z"));
 
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.auditLog.deleteMany();
   await db.prisma.timeSession.deleteMany();
@@ -2628,13 +2851,17 @@ describe("clockIn", () => {
   it("refuses when a session is already open (ConflictError ALREADY_CLOCKED_IN)", async () => {
     const u = await makeUser();
     await clockIn({ prisma: db.prisma, clock }, u.id);
-    await expect(clockIn({ prisma: db.prisma, clock }, u.id)).rejects.toMatchObject({ code: "ALREADY_CLOCKED_IN" });
+    await expect(clockIn({ prisma: db.prisma, clock }, u.id)).rejects.toMatchObject({
+      code: "ALREADY_CLOCKED_IN",
+    });
   });
 
   it("refuses when user is deactivated", async () => {
     const u = await makeUser();
     await db.prisma.user.update({ where: { id: u.id }, data: { deactivatedAt: new Date() } });
-    await expect(clockIn({ prisma: db.prisma, clock }, u.id)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(clockIn({ prisma: db.prisma, clock }, u.id)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 ```
@@ -2693,6 +2920,7 @@ git commit -m "feat(attendance): clockIn with audit + ConflictError on double-cl
 ### Task 4.3: `clockOut` service + audit + tests
 
 **Files:**
+
 - Modify: `src/features/attendance/service.ts`
 - Create: `tests/integration/attendance/clock-out.test.ts`
 
@@ -2709,8 +2937,12 @@ import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T13:00:00Z"));
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.auditLog.deleteMany();
   await db.prisma.timeSession.deleteMany();
@@ -2720,18 +2952,27 @@ beforeEach(async () => {
 
 describe("clockOut", () => {
   it("closes the open session and writes CLOCK_OUT audit", async () => {
-    const u = await db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") } });
+    const u = await db.prisma.user.create({
+      data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") },
+    });
     await clockIn({ prisma: db.prisma, clock }, u.id);
     clock.advanceMinutes(90);
     const s = await clockOut({ prisma: db.prisma, clock }, u.id);
     expect(s.clockOutAt?.toISOString()).toBe("2026-05-12T14:30:00.000Z");
-    const audits = await db.prisma.auditLog.findMany({ where: { targetSessionId: s.id }, orderBy: { at: "asc" } });
+    const audits = await db.prisma.auditLog.findMany({
+      where: { targetSessionId: s.id },
+      orderBy: { at: "asc" },
+    });
     expect(audits.map((a) => a.action)).toEqual(["CLOCK_IN", "CLOCK_OUT"]);
   });
 
   it("rejects when there is no open session (NotFoundError)", async () => {
-    const u = await db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") } });
-    await expect(clockOut({ prisma: db.prisma, clock }, u.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const u = await db.prisma.user.create({
+      data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") },
+    });
+    await expect(clockOut({ prisma: db.prisma, clock }, u.id)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 });
 ```
@@ -2752,7 +2993,9 @@ export async function clockOut(
   userId: string,
 ): Promise<TimeSession> {
   return prisma.$transaction(async (tx) => {
-    const open = await tx.timeSession.findFirst({ where: { userId, clockOutAt: null, deletedAt: null } });
+    const open = await tx.timeSession.findFirst({
+      where: { userId, clockOutAt: null, deletedAt: null },
+    });
     if (!open) throw new NotFoundError("You are not clocked in.");
     const updated = await tx.timeSession.update({
       where: { id: open.id },
@@ -2782,6 +3025,7 @@ git commit -m "feat(attendance): clockOut with audit"
 ### Task 4.4: Overlap detection helper + tests
 
 **Files:**
+
 - Modify: `src/features/attendance/service.ts`
 - Create: `tests/unit/attendance/overlap.test.ts`
 
@@ -2797,16 +3041,39 @@ describe("rangesOverlap", () => {
   const A_IN = new Date("2026-05-12T08:00:00Z");
   const A_OUT = new Date("2026-05-12T12:00:00Z");
   it("non-overlapping sequential ranges do not overlap", () => {
-    expect(rangesOverlap(A_IN, A_OUT, new Date("2026-05-12T12:00:00Z"), new Date("2026-05-12T14:00:00Z"))).toBe(false);
+    expect(
+      rangesOverlap(
+        A_IN,
+        A_OUT,
+        new Date("2026-05-12T12:00:00Z"),
+        new Date("2026-05-12T14:00:00Z"),
+      ),
+    ).toBe(false);
   });
   it("interior overlap returns true", () => {
-    expect(rangesOverlap(A_IN, A_OUT, new Date("2026-05-12T10:00:00Z"), new Date("2026-05-12T11:00:00Z"))).toBe(true);
+    expect(
+      rangesOverlap(
+        A_IN,
+        A_OUT,
+        new Date("2026-05-12T10:00:00Z"),
+        new Date("2026-05-12T11:00:00Z"),
+      ),
+    ).toBe(true);
   });
   it("partial overlap returns true", () => {
-    expect(rangesOverlap(A_IN, A_OUT, new Date("2026-05-12T11:00:00Z"), new Date("2026-05-12T13:00:00Z"))).toBe(true);
+    expect(
+      rangesOverlap(
+        A_IN,
+        A_OUT,
+        new Date("2026-05-12T11:00:00Z"),
+        new Date("2026-05-12T13:00:00Z"),
+      ),
+    ).toBe(true);
   });
   it("open-ended sessions (no out) treated as ongoing to far future", () => {
-    expect(rangesOverlap(A_IN, null, new Date("2026-05-12T20:00:00Z"), new Date("2026-05-12T21:00:00Z"))).toBe(true);
+    expect(
+      rangesOverlap(A_IN, null, new Date("2026-05-12T20:00:00Z"), new Date("2026-05-12T21:00:00Z")),
+    ).toBe(true);
   });
 });
 ```
@@ -2820,12 +3087,7 @@ pnpm test:unit
 - [ ] **Step 3: Add `rangesOverlap` export to `service.ts`**
 
 ```ts
-export function rangesOverlap(
-  aIn: Date,
-  aOut: Date | null,
-  bIn: Date,
-  bOut: Date | null,
-): boolean {
+export function rangesOverlap(aIn: Date, aOut: Date | null, bIn: Date, bOut: Date | null): boolean {
   const FAR = new Date(8.64e15);
   const aEnd = aOut ?? FAR;
   const bEnd = bOut ?? FAR;
@@ -2849,6 +3111,7 @@ git commit -m "feat(attendance): rangesOverlap helper"
 ### Task 4.5: `editOwnSession` (7-day window, validation, audit)
 
 **Files:**
+
 - Modify: `src/features/attendance/service.ts`
 - Create: `tests/integration/attendance/edit-own.test.ts`
 
@@ -2865,8 +3128,12 @@ import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T13:00:00Z"));
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.auditLog.deleteMany();
   await db.prisma.timeSession.deleteMany();
@@ -2875,21 +3142,29 @@ beforeEach(async () => {
 });
 
 async function makeUser() {
-  return db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") } });
+  return db.prisma.user.create({
+    data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") },
+  });
 }
 
 describe("editOwnSession", () => {
   it("adjusts times within 7-day window and writes EDIT_SESSION audit with before/after", async () => {
     const u = await makeUser();
     const s = await db.prisma.timeSession.create({
-      data: { userId: u.id, clockInAt: new Date("2026-05-12T08:00:00Z"), clockOutAt: new Date("2026-05-12T12:00:00Z") },
+      data: {
+        userId: u.id,
+        clockInAt: new Date("2026-05-12T08:00:00Z"),
+        clockOutAt: new Date("2026-05-12T12:00:00Z"),
+      },
     });
-    const updated = await editOwnSession(
-      { prisma: db.prisma, clock }, u.id, s.id,
-      { clockInAt: new Date("2026-05-12T08:15:00Z"), reason: "forgot to clock in" },
-    );
+    const updated = await editOwnSession({ prisma: db.prisma, clock }, u.id, s.id, {
+      clockInAt: new Date("2026-05-12T08:15:00Z"),
+      reason: "forgot to clock in",
+    });
     expect(updated.clockInAt.toISOString()).toBe("2026-05-12T08:15:00.000Z");
-    const audit = await db.prisma.auditLog.findFirst({ where: { targetSessionId: s.id, action: "EDIT_SESSION" } });
+    const audit = await db.prisma.auditLog.findFirst({
+      where: { targetSessionId: s.id, action: "EDIT_SESSION" },
+    });
     expect(audit?.reason).toBe("forgot to clock in");
     expect(audit?.before).toBeTruthy();
     expect(audit?.after).toBeTruthy();
@@ -2898,48 +3173,77 @@ describe("editOwnSession", () => {
   it("rejects edit outside 7-day window", async () => {
     const u = await makeUser();
     const s = await db.prisma.timeSession.create({
-      data: { userId: u.id, clockInAt: new Date("2026-05-01T08:00:00Z"), clockOutAt: new Date("2026-05-01T12:00:00Z") },
+      data: {
+        userId: u.id,
+        clockInAt: new Date("2026-05-01T08:00:00Z"),
+        clockOutAt: new Date("2026-05-01T12:00:00Z"),
+      },
     });
-    await expect(editOwnSession(
-      { prisma: db.prisma, clock }, u.id, s.id,
-      { clockInAt: new Date("2026-05-01T08:30:00Z") },
-    )).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      editOwnSession({ prisma: db.prisma, clock }, u.id, s.id, {
+        clockInAt: new Date("2026-05-01T08:30:00Z"),
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("rejects editing another user's session", async () => {
-    const u1 = await db.prisma.user.create({ data: { email: "u1@x.com", name: "U1", passwordHash: await hash("password1234aa") } });
-    const u2 = await db.prisma.user.create({ data: { email: "u2@x.com", name: "U2", passwordHash: await hash("password1234aa") } });
-    const s = await db.prisma.timeSession.create({
-      data: { userId: u2.id, clockInAt: new Date("2026-05-12T08:00:00Z"), clockOutAt: new Date("2026-05-12T12:00:00Z") },
+    const u1 = await db.prisma.user.create({
+      data: { email: "u1@x.com", name: "U1", passwordHash: await hash("password1234aa") },
     });
-    await expect(editOwnSession(
-      { prisma: db.prisma, clock }, u1.id, s.id, { clockInAt: new Date("2026-05-12T08:30:00Z") },
-    )).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const u2 = await db.prisma.user.create({
+      data: { email: "u2@x.com", name: "U2", passwordHash: await hash("password1234aa") },
+    });
+    const s = await db.prisma.timeSession.create({
+      data: {
+        userId: u2.id,
+        clockInAt: new Date("2026-05-12T08:00:00Z"),
+        clockOutAt: new Date("2026-05-12T12:00:00Z"),
+      },
+    });
+    await expect(
+      editOwnSession({ prisma: db.prisma, clock }, u1.id, s.id, {
+        clockInAt: new Date("2026-05-12T08:30:00Z"),
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("rejects edit that creates overlap with another own session", async () => {
     const u = await makeUser();
     await db.prisma.timeSession.create({
-      data: { userId: u.id, clockInAt: new Date("2026-05-12T08:00:00Z"), clockOutAt: new Date("2026-05-12T10:00:00Z") },
+      data: {
+        userId: u.id,
+        clockInAt: new Date("2026-05-12T08:00:00Z"),
+        clockOutAt: new Date("2026-05-12T10:00:00Z"),
+      },
     });
     const s2 = await db.prisma.timeSession.create({
-      data: { userId: u.id, clockInAt: new Date("2026-05-12T11:00:00Z"), clockOutAt: new Date("2026-05-12T12:00:00Z") },
+      data: {
+        userId: u.id,
+        clockInAt: new Date("2026-05-12T11:00:00Z"),
+        clockOutAt: new Date("2026-05-12T12:00:00Z"),
+      },
     });
-    await expect(editOwnSession(
-      { prisma: db.prisma, clock }, u.id, s2.id,
-      { clockInAt: new Date("2026-05-12T09:30:00Z") },
-    )).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      editOwnSession({ prisma: db.prisma, clock }, u.id, s2.id, {
+        clockInAt: new Date("2026-05-12T09:30:00Z"),
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
   it("rejects times in the future", async () => {
     const u = await makeUser();
     const s = await db.prisma.timeSession.create({
-      data: { userId: u.id, clockInAt: new Date("2026-05-12T08:00:00Z"), clockOutAt: new Date("2026-05-12T12:00:00Z") },
+      data: {
+        userId: u.id,
+        clockInAt: new Date("2026-05-12T08:00:00Z"),
+        clockOutAt: new Date("2026-05-12T12:00:00Z"),
+      },
     });
-    await expect(editOwnSession(
-      { prisma: db.prisma, clock }, u.id, s.id,
-      { clockOutAt: new Date("2026-06-01T00:00:00Z") },
-    )).rejects.toMatchObject({ code: "VALIDATION" });
+    await expect(
+      editOwnSession({ prisma: db.prisma, clock }, u.id, s.id, {
+        clockOutAt: new Date("2026-06-01T00:00:00Z"),
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
   });
 });
 ```
@@ -2975,9 +3279,11 @@ export async function editOwnSession(
 
     const nextIn = patch.clockInAt ?? s.clockInAt;
     const nextOut = patch.clockOutAt === undefined ? s.clockOutAt : patch.clockOutAt;
-    if (nextOut !== null && nextIn >= nextOut) throw new ValidationError("clockInAt must be before clockOutAt.");
+    if (nextOut !== null && nextIn >= nextOut)
+      throw new ValidationError("clockInAt must be before clockOutAt.");
     if (nextIn > now) throw new ValidationError("clockInAt cannot be in the future.");
-    if (nextOut !== null && nextOut > now) throw new ValidationError("clockOutAt cannot be in the future.");
+    if (nextOut !== null && nextOut > now)
+      throw new ValidationError("clockOutAt cannot be in the future.");
 
     const others = await tx.timeSession.findMany({
       where: { userId, id: { not: sessionId }, deletedAt: null },
@@ -3000,8 +3306,12 @@ export async function editOwnSession(
     const after = snapshot(updated);
     await tx.auditLog.create({
       data: {
-        actorUserId: userId, targetSessionId: sessionId, action: "EDIT_SESSION",
-        before, after, reason: patch.reason ?? null,
+        actorUserId: userId,
+        targetSessionId: sessionId,
+        action: "EDIT_SESSION",
+        before,
+        after,
+        reason: patch.reason ?? null,
       },
     });
     return updated;
@@ -3025,6 +3335,7 @@ git commit -m "feat(attendance): editOwnSession with 7-day window, overlap, audi
 ### Task 4.6: `adminEditSession` + `adminDeleteSession` (soft) + tests
 
 **Files:**
+
 - Modify: `src/features/attendance/service.ts`
 - Create: `tests/integration/attendance/admin-mutations.test.ts`
 
@@ -3041,8 +3352,12 @@ import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T13:00:00Z"));
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.auditLog.deleteMany();
   await db.prisma.timeSession.deleteMany();
@@ -3052,28 +3367,56 @@ beforeEach(async () => {
 
 describe("admin mutations", () => {
   it("admin can edit a session older than 7 days", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    const emp = await db.prisma.user.create({ data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") } });
-    const s = await db.prisma.timeSession.create({
-      data: { userId: emp.id, clockInAt: new Date("2026-04-01T08:00:00Z"), clockOutAt: new Date("2026-04-01T12:00:00Z") },
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
     });
-    const updated = await adminEditSession(
-      { prisma: db.prisma, clock }, admin.id, s.id,
-      { clockInAt: new Date("2026-04-01T08:15:00Z"), reason: "payroll fix" },
-    );
+    const emp = await db.prisma.user.create({
+      data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") },
+    });
+    const s = await db.prisma.timeSession.create({
+      data: {
+        userId: emp.id,
+        clockInAt: new Date("2026-04-01T08:00:00Z"),
+        clockOutAt: new Date("2026-04-01T12:00:00Z"),
+      },
+    });
+    const updated = await adminEditSession({ prisma: db.prisma, clock }, admin.id, s.id, {
+      clockInAt: new Date("2026-04-01T08:15:00Z"),
+      reason: "payroll fix",
+    });
     expect(updated.clockInAt.toISOString()).toBe("2026-04-01T08:15:00.000Z");
   });
 
   it("adminDeleteSession soft-deletes and writes DELETE_SESSION", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    const emp = await db.prisma.user.create({ data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") } });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    const emp = await db.prisma.user.create({
+      data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") },
+    });
     const s = await db.prisma.timeSession.create({
-      data: { userId: emp.id, clockInAt: new Date("2026-05-10T08:00:00Z"), clockOutAt: new Date("2026-05-10T12:00:00Z") },
+      data: {
+        userId: emp.id,
+        clockInAt: new Date("2026-05-10T08:00:00Z"),
+        clockOutAt: new Date("2026-05-10T12:00:00Z"),
+      },
     });
     await adminDeleteSession({ prisma: db.prisma, clock }, admin.id, s.id, "duplicate entry");
     const fresh = await db.prisma.timeSession.findUnique({ where: { id: s.id } });
     expect(fresh?.deletedAt).not.toBeNull();
-    const audit = await db.prisma.auditLog.findFirst({ where: { targetSessionId: s.id, action: "DELETE_SESSION" } });
+    const audit = await db.prisma.auditLog.findFirst({
+      where: { targetSessionId: s.id, action: "DELETE_SESSION" },
+    });
     expect(audit?.reason).toBe("duplicate entry");
   });
 });
@@ -3100,9 +3443,11 @@ export async function adminEditSession(
     const now = clock.now();
     const nextIn = patch.clockInAt ?? s.clockInAt;
     const nextOut = patch.clockOutAt === undefined ? s.clockOutAt : patch.clockOutAt;
-    if (nextOut !== null && nextIn >= nextOut) throw new ValidationError("clockInAt must be before clockOutAt.");
+    if (nextOut !== null && nextIn >= nextOut)
+      throw new ValidationError("clockInAt must be before clockOutAt.");
     if (nextIn > now) throw new ValidationError("clockInAt cannot be in the future.");
-    if (nextOut !== null && nextOut > now) throw new ValidationError("clockOutAt cannot be in the future.");
+    if (nextOut !== null && nextOut > now)
+      throw new ValidationError("clockOutAt cannot be in the future.");
 
     const others = await tx.timeSession.findMany({
       where: { userId: s.userId, id: { not: sessionId }, deletedAt: null },
@@ -3120,7 +3465,14 @@ export async function adminEditSession(
     });
     const after = snapshot(updated);
     await tx.auditLog.create({
-      data: { actorUserId: adminId, targetSessionId: sessionId, action: "EDIT_SESSION", before, after, reason: patch.reason ?? null },
+      data: {
+        actorUserId: adminId,
+        targetSessionId: sessionId,
+        action: "EDIT_SESSION",
+        before,
+        after,
+        reason: patch.reason ?? null,
+      },
     });
     return updated;
   });
@@ -3136,10 +3488,20 @@ export async function adminDeleteSession(
     const s = await tx.timeSession.findUnique({ where: { id: sessionId } });
     if (!s || s.deletedAt) throw new NotFoundError();
     const before = snapshot(s);
-    const updated = await tx.timeSession.update({ where: { id: sessionId }, data: { deletedAt: clock.now() } });
+    const updated = await tx.timeSession.update({
+      where: { id: sessionId },
+      data: { deletedAt: clock.now() },
+    });
     const after = snapshot(updated);
     await tx.auditLog.create({
-      data: { actorUserId: adminId, targetSessionId: sessionId, action: "DELETE_SESSION", before, after, reason },
+      data: {
+        actorUserId: adminId,
+        targetSessionId: sessionId,
+        action: "DELETE_SESSION",
+        before,
+        after,
+        reason,
+      },
     });
   });
 }
@@ -3161,6 +3523,7 @@ git commit -m "feat(attendance): adminEditSession and adminDeleteSession (soft)"
 ### Task 4.7: Server actions wrapping the services
 
 **Files:**
+
 - Create: `src/features/attendance/actions.ts`
 
 - [ ] **Step 1: Write `src/features/attendance/actions.ts`**
@@ -3173,9 +3536,7 @@ import { prisma } from "@/lib/db";
 import { systemClock } from "@/lib/time";
 import { requireUser, requireAdmin } from "@/lib/auth";
 import { toErrorEnvelope, ValidationError } from "@/lib/errors";
-import {
-  clockIn, clockOut, editOwnSession, adminEditSession, adminDeleteSession,
-} from "./service";
+import { clockIn, clockOut, editOwnSession, adminEditSession, adminDeleteSession } from "./service";
 
 const editPatchSchema = z.object({
   sessionId: z.string().min(1),
@@ -3188,7 +3549,12 @@ const editPatchSchema = z.object({
 function patchFromInput(input: z.infer<typeof editPatchSchema>) {
   return {
     clockInAt: input.clockInAt ? new Date(input.clockInAt) : undefined,
-    clockOutAt: input.clockOutAt === undefined ? undefined : (input.clockOutAt === null ? null : new Date(input.clockOutAt)),
+    clockOutAt:
+      input.clockOutAt === undefined
+        ? undefined
+        : input.clockOutAt === null
+          ? null
+          : new Date(input.clockOutAt),
     notes: input.notes,
     reason: input.reason,
   };
@@ -3201,7 +3567,9 @@ export async function clockInAction() {
     revalidatePath("/clock");
     revalidatePath("/calendar");
     return { ok: true as const, sessionId: s.id };
-  } catch (err) { return toErrorEnvelope(err); }
+  } catch (err) {
+    return toErrorEnvelope(err);
+  }
 }
 
 export async function clockOutAction() {
@@ -3212,7 +3580,9 @@ export async function clockOutAction() {
     revalidatePath("/calendar");
     revalidatePath("/reports");
     return { ok: true as const, sessionId: s.id };
-  } catch (err) { return toErrorEnvelope(err); }
+  } catch (err) {
+    return toErrorEnvelope(err);
+  }
 }
 
 export async function editOwnSessionAction(input: unknown) {
@@ -3220,14 +3590,24 @@ export async function editOwnSessionAction(input: unknown) {
     const user = await requireUser();
     const parsed = editPatchSchema.parse(input);
     const patch = patchFromInput(parsed);
-    if (Object.keys(patch).filter((k) => (patch as Record<string, unknown>)[k] !== undefined).length === 0) {
+    if (
+      Object.keys(patch).filter((k) => (patch as Record<string, unknown>)[k] !== undefined)
+        .length === 0
+    ) {
       throw new ValidationError("Patch is empty.");
     }
-    const s = await editOwnSession({ prisma, clock: systemClock }, user.id, parsed.sessionId, patch);
+    const s = await editOwnSession(
+      { prisma, clock: systemClock },
+      user.id,
+      parsed.sessionId,
+      patch,
+    );
     revalidatePath("/calendar");
     revalidatePath("/reports");
     return { ok: true as const, sessionId: s.id };
-  } catch (err) { return toErrorEnvelope(err); }
+  } catch (err) {
+    return toErrorEnvelope(err);
+  }
 }
 
 export async function adminEditSessionAction(input: unknown) {
@@ -3235,11 +3615,18 @@ export async function adminEditSessionAction(input: unknown) {
     const admin = await requireAdmin();
     const parsed = editPatchSchema.parse(input);
     const patch = patchFromInput(parsed);
-    const s = await adminEditSession({ prisma, clock: systemClock }, admin.id, parsed.sessionId, patch);
+    const s = await adminEditSession(
+      { prisma, clock: systemClock },
+      admin.id,
+      parsed.sessionId,
+      patch,
+    );
     revalidatePath("/admin/audit");
     revalidatePath("/reports");
     return { ok: true as const, sessionId: s.id };
-  } catch (err) { return toErrorEnvelope(err); }
+  } catch (err) {
+    return toErrorEnvelope(err);
+  }
 }
 
 const deleteSchema = z.object({ sessionId: z.string().min(1), reason: z.string().min(1).max(500) });
@@ -3248,11 +3635,18 @@ export async function adminDeleteSessionAction(input: unknown) {
   try {
     const admin = await requireAdmin();
     const parsed = deleteSchema.parse(input);
-    await adminDeleteSession({ prisma, clock: systemClock }, admin.id, parsed.sessionId, parsed.reason);
+    await adminDeleteSession(
+      { prisma, clock: systemClock },
+      admin.id,
+      parsed.sessionId,
+      parsed.reason,
+    );
     revalidatePath("/admin/audit");
     revalidatePath("/reports");
     return { ok: true as const };
-  } catch (err) { return toErrorEnvelope(err); }
+  } catch (err) {
+    return toErrorEnvelope(err);
+  }
 }
 ```
 
@@ -3271,7 +3665,6 @@ git commit -m "feat(attendance): server actions wrapping services"
 
 ---
 
-
 ## Milestone 5 â€” Theme + clock UI (`/clock`)
 
 End state: authenticated users see the App shell (header with nav, theme toggle, user menu, live indicator). The `/clock` page renders Layout A â€” large "ON THE CLOCK" / "OFF THE CLOCK" hero with the JetBrains Mono live counter, a CLOCK IN/OUT button, today/week/sessions stats, and the recent-sessions list. Theme toggle persists across reload with no flash.
@@ -3279,6 +3672,7 @@ End state: authenticated users see the App shell (header with nav, theme toggle,
 ### Task 5.1: Theme provider with pre-paint init
 
 **Files:**
+
 - Create: `src/components/theme/theme-script.tsx`
 - Create: `src/components/theme/theme-toggle.tsx`
 - Modify: `src/app/layout.tsx`
@@ -3342,7 +3736,10 @@ export function ThemeToggle() {
       aria-label={`Theme: ${label}. Click to switch.`}
       data-testid="theme-toggle"
       data-theme-mode={mode}
-      onClick={() => { setMode(next); apply(next); }}
+      onClick={() => {
+        setMode(next);
+        apply(next);
+      }}
     >
       {label}
     </Button>
@@ -3359,7 +3756,9 @@ import { ThemeScript } from "@/components/theme/theme-script";
 // ...
 return (
   <html lang="en" suppressHydrationWarning>
-    <head><ThemeScript /></head>
+    <head>
+      <ThemeScript />
+    </head>
     <body className={`${inter.variable} ${mono.variable} ${outfit.variable} font-sans antialiased`}>
       {children}
     </body>
@@ -3377,6 +3776,7 @@ git commit -m "feat: theme provider with pre-paint init script"
 ### Task 5.2: App shell layout (header, nav, user menu)
 
 **Files:**
+
 - Create: `src/app/(app)/layout.tsx`
 - Create: `src/components/app-shell/header.tsx`
 - Create: `src/components/app-shell/live-indicator.tsx`
@@ -3413,15 +3813,47 @@ export function Header({ user }: { user: Session["user"] }) {
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg-elev)] backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/clock" className="font-display text-lg font-semibold tracking-tight">PunchPad</Link>
+        <Link href="/clock" className="font-display text-lg font-semibold tracking-tight">
+          PunchPad
+        </Link>
         <nav className="ml-4 flex gap-1 text-sm">
-          <Link href="/clock" className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]" data-testid="nav-clock">Clock</Link>
-          <Link href="/calendar" className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]" data-testid="nav-calendar">Calendar</Link>
-          <Link href="/reports" className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]" data-testid="nav-reports">Reports</Link>
+          <Link
+            href="/clock"
+            className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]"
+            data-testid="nav-clock"
+          >
+            Clock
+          </Link>
+          <Link
+            href="/calendar"
+            className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]"
+            data-testid="nav-calendar"
+          >
+            Calendar
+          </Link>
+          <Link
+            href="/reports"
+            className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]"
+            data-testid="nav-reports"
+          >
+            Reports
+          </Link>
           {isAdmin && (
             <>
-              <Link href="/admin/users" className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]" data-testid="nav-admin-users">Users</Link>
-              <Link href="/admin/audit" className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]" data-testid="nav-admin-audit">Audit</Link>
+              <Link
+                href="/admin/users"
+                className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]"
+                data-testid="nav-admin-users"
+              >
+                Users
+              </Link>
+              <Link
+                href="/admin/audit"
+                className="rounded px-3 py-1 hover:bg-[var(--bg-elev-2)]"
+                data-testid="nav-admin-audit"
+              >
+                Audit
+              </Link>
             </>
           )}
         </nav>
@@ -3443,16 +3875,26 @@ export function Header({ user }: { user: Session["user"] }) {
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function UserMenu({ user }: { user: Session["user"] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" data-testid="user-menu-trigger">{user.name}</Button>
+        <Button variant="ghost" size="sm" data-testid="user-menu-trigger">
+          {user.name}
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/login" })} data-testid="user-menu-signout">
+        <DropdownMenuItem
+          onSelect={() => signOut({ callbackUrl: "/login" })}
+          data-testid="user-menu-signout"
+        >
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -3481,18 +3923,29 @@ export function LiveIndicator({ userId, timezone }: { userId: string; timezone: 
     }
     void load();
     const id = setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => { cancel = true; clearInterval(id); };
+    return () => {
+      cancel = true;
+      clearInterval(id);
+    };
   }, [userId, tick]);
 
   if (!open) {
-    return <span className="text-xs text-[var(--text-ghost)]" data-testid="live-indicator-off">Off the clock</span>;
+    return (
+      <span className="text-xs text-[var(--text-ghost)]" data-testid="live-indicator-off">
+        Off the clock
+      </span>
+    );
   }
   const inAt = new Date(open.clockInAt).getTime();
   const elapsed = Math.max(0, Date.now() - inAt);
   const h = Math.floor(elapsed / 3_600_000);
   const m = Math.floor((elapsed % 3_600_000) / 60_000);
   return (
-    <span className="flex items-center gap-2 text-xs font-mono text-[var(--accent)]" data-testid="live-indicator-on" title={`Started ${new Date(inAt).toLocaleTimeString()}`}>
+    <span
+      className="flex items-center gap-2 text-xs font-mono text-[var(--accent)]"
+      data-testid="live-indicator-on"
+      title={`Started ${new Date(inAt).toLocaleTimeString()}`}
+    >
       <span className="size-2 animate-pulse rounded-full bg-[var(--accent)]" />
       On the clock {h}h {m.toString().padStart(2, "0")}m
     </span>
@@ -3530,6 +3983,7 @@ git commit -m "feat: app shell header, user menu, live indicator"
 ### Task 5.3: `/clock` hero state (idle + active)
 
 **Files:**
+
 - Create: `src/app/(app)/clock/page.tsx`
 - Create: `src/features/attendance/queries.ts`
 - Create: `src/features/attendance/components/clock-hero.tsx`
@@ -3607,7 +4061,10 @@ export function ClockCounter({ clockInAt }: { clockInAt: string }) {
   const s = Math.floor((elapsed % 60_000) / 1_000);
   const pad = (n: number) => n.toString().padStart(2, "0");
   return (
-    <p className="font-mono text-6xl tabular-nums tracking-tight text-[var(--text)] md:text-7xl" data-testid="clock-counter">
+    <p
+      className="font-mono text-6xl tabular-nums tracking-tight text-[var(--text)] md:text-7xl"
+      data-testid="clock-counter"
+    >
       {pad(h)} : {pad(m)} : {pad(s)}
     </p>
   );
@@ -3648,9 +4105,15 @@ export function ClockHero({ open }: Props) {
     <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elev)] p-10 text-center">
       {open ? (
         <>
-          <p className="font-display text-sm uppercase tracking-[0.2em] text-[var(--accent)]">On the clock</p>
-          <div className="my-6"><ClockCounter clockInAt={open.clockInAt} /></div>
-          <p className="text-sm text-[var(--text-dim)]" data-testid="clock-started-at">Started at {open.startedAtLocal}</p>
+          <p className="font-display text-sm uppercase tracking-[0.2em] text-[var(--accent)]">
+            On the clock
+          </p>
+          <div className="my-6">
+            <ClockCounter clockInAt={open.clockInAt} />
+          </div>
+          <p className="text-sm text-[var(--text-dim)]" data-testid="clock-started-at">
+            Started at {open.startedAtLocal}
+          </p>
           <Button
             size="lg"
             className="mt-8 h-14 min-w-64 bg-[var(--accent)] text-base font-semibold text-white hover:bg-[var(--accent-hover)]"
@@ -3663,8 +4126,15 @@ export function ClockHero({ open }: Props) {
         </>
       ) : (
         <>
-          <p className="font-display text-sm uppercase tracking-[0.2em] text-[var(--text-dim)]">Off the clock</p>
-          <p className="mt-6 font-mono text-5xl text-[var(--text-ghost)]" data-testid="clock-counter-idle">00 : 00 : 00</p>
+          <p className="font-display text-sm uppercase tracking-[0.2em] text-[var(--text-dim)]">
+            Off the clock
+          </p>
+          <p
+            className="mt-6 font-mono text-5xl text-[var(--text-ghost)]"
+            data-testid="clock-counter-idle"
+          >
+            00 : 00 : 00
+          </p>
           <Button
             size="lg"
             className="mt-8 h-14 min-w-64 bg-[var(--accent)] text-base font-semibold text-white hover:bg-[var(--accent-hover)]"
@@ -3676,7 +4146,11 @@ export function ClockHero({ open }: Props) {
           </Button>
         </>
       )}
-      {error && <p className="mt-4 text-sm text-[var(--danger)]" data-testid="clock-error">{error}</p>}
+      {error && (
+        <p className="mt-4 text-sm text-[var(--danger)]" data-testid="clock-error">
+          {error}
+        </p>
+      )}
     </section>
   );
 }
@@ -3689,7 +4163,13 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { systemClock } from "@/lib/time";
 import { formatLocal } from "@/lib/time";
-import { getOpenSession, getTodayStats, getWeekStats, getRecentSessions, formatHm } from "@/features/attendance/queries";
+import {
+  getOpenSession,
+  getTodayStats,
+  getWeekStats,
+  getRecentSessions,
+  formatHm,
+} from "@/features/attendance/queries";
 import { ClockHero } from "@/features/attendance/components/clock-hero";
 
 export const dynamic = "force-dynamic";
@@ -3707,10 +4187,14 @@ export default async function ClockPage() {
   return (
     <div className="space-y-6">
       <ClockHero
-        open={open ? {
-          clockInAt: open.clockInAt.toISOString(),
-          startedAtLocal: formatLocal(open.clockInAt, user.timezone, "h:mm a Â· EEEE"),
-        } : null}
+        open={
+          open
+            ? {
+                clockInAt: open.clockInAt.toISOString(),
+                startedAtLocal: formatLocal(open.clockInAt, user.timezone, "h:mm a Â· EEEE"),
+              }
+            : null
+        }
       />
 
       <section className="grid gap-4 sm:grid-cols-3">
@@ -3720,17 +4204,28 @@ export default async function ClockPage() {
       </section>
 
       <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] p-5">
-        <h2 className="mb-3 font-display text-sm uppercase tracking-wider text-[var(--text-dim)]">Recent</h2>
+        <h2 className="mb-3 font-display text-sm uppercase tracking-wider text-[var(--text-dim)]">
+          Recent
+        </h2>
         {recent.length === 0 ? (
-          <p className="text-sm text-[var(--text-ghost)]" data-testid="recent-empty">No completed sessions yet.</p>
+          <p className="text-sm text-[var(--text-ghost)]" data-testid="recent-empty">
+            No completed sessions yet.
+          </p>
         ) : (
           <ul className="divide-y divide-[var(--border)]" data-testid="recent-list">
             {recent.map((s) => (
               <li key={s.id} className="flex items-center justify-between py-3 text-sm">
                 <span className="font-mono text-[var(--text-dim)]">
-                  {formatLocal(s.clockInAt, user.timezone, "EEE  h:mma")} â†’ {s.clockOutAt ? formatLocal(s.clockOutAt, user.timezone, "h:mma") : "â€”"}
+                  {formatLocal(s.clockInAt, user.timezone, "EEE  h:mma")} â†’{" "}
+                  {s.clockOutAt ? formatLocal(s.clockOutAt, user.timezone, "h:mma") : "â€”"}
                 </span>
-                <span className="font-mono">{formatHm(Math.floor(((s.clockOutAt?.getTime() ?? Date.now()) - s.clockInAt.getTime()) / 60_000))}</span>
+                <span className="font-mono">
+                  {formatHm(
+                    Math.floor(
+                      ((s.clockOutAt?.getTime() ?? Date.now()) - s.clockInAt.getTime()) / 60_000,
+                    ),
+                  )}
+                </span>
               </li>
             ))}
           </ul>
@@ -3744,7 +4239,9 @@ function Stat({ label, value, testId }: { label: string; value: string; testId: 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] p-5">
       <p className="text-xs uppercase tracking-wider text-[var(--text-dim)]">{label}</p>
-      <p className="mt-1 font-mono text-2xl tabular-nums" data-testid={testId}>{value}</p>
+      <p className="mt-1 font-mono text-2xl tabular-nums" data-testid={testId}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -3768,6 +4265,7 @@ git commit -m "feat: /clock hero (idle + active), stats, recent sessions"
 ### Task 5.4: E2E â€” clock in/out flow
 
 **Files:**
+
 - Create: `tests/e2e/clock/clock-flow.spec.ts`
 
 - [ ] **Step 1: Write the E2E test**
@@ -3823,6 +4321,7 @@ git commit -m "test: e2e clock in/out flow"
 ### Task 5.5: E2E â€” theme toggle persists pre-paint
 
 **Files:**
+
 - Create: `tests/e2e/theme/theme.spec.ts`
 
 - [ ] **Step 1: Write the test**
@@ -3862,7 +4361,6 @@ git commit -m "test: e2e theme persistence"
 
 ---
 
-
 ## Milestone 6 â€” Calendar (`/calendar`)
 
 End state: month grid (default) and week view of the current user's sessions in their TZ. Each day cell shows total hours as a small bar plus a session count. Clicking a day opens a side sheet listing that day's sessions; sessions inside the 7-day window have an inline edit affordance. E2E covers an employee editing their own session.
@@ -3870,6 +4368,7 @@ End state: month grid (default) and week view of the current user's sessions in 
 ### Task 6.1: Calendar query layer
 
 **Files:**
+
 - Create: `src/features/attendance/calendar-queries.ts`
 - Create: `tests/integration/attendance/calendar-queries.test.ts`
 
@@ -3884,8 +4383,12 @@ import { sessionsInRange, bucketByLocalDay } from "@/features/attendance/calenda
 import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.timeSession.deleteMany();
   await db.prisma.user.deleteMany({ where: { id: { not: "system" } } });
@@ -3893,18 +4396,49 @@ beforeEach(async () => {
 
 describe("calendar queries", () => {
   it("sessionsInRange returns only sessions intersecting the window for the user", async () => {
-    const u = await db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") } });
-    await db.prisma.timeSession.create({ data: { userId: u.id, clockInAt: new Date("2026-05-01T08:00:00Z"), clockOutAt: new Date("2026-05-01T12:00:00Z") } });
-    await db.prisma.timeSession.create({ data: { userId: u.id, clockInAt: new Date("2026-05-15T08:00:00Z"), clockOutAt: new Date("2026-05-15T12:00:00Z") } });
-    const rows = await sessionsInRange(db.prisma, u.id, new Date("2026-05-10T00:00:00Z"), new Date("2026-05-20T00:00:00Z"));
+    const u = await db.prisma.user.create({
+      data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") },
+    });
+    await db.prisma.timeSession.create({
+      data: {
+        userId: u.id,
+        clockInAt: new Date("2026-05-01T08:00:00Z"),
+        clockOutAt: new Date("2026-05-01T12:00:00Z"),
+      },
+    });
+    await db.prisma.timeSession.create({
+      data: {
+        userId: u.id,
+        clockInAt: new Date("2026-05-15T08:00:00Z"),
+        clockOutAt: new Date("2026-05-15T12:00:00Z"),
+      },
+    });
+    const rows = await sessionsInRange(
+      db.prisma,
+      u.id,
+      new Date("2026-05-10T00:00:00Z"),
+      new Date("2026-05-20T00:00:00Z"),
+    );
     expect(rows).toHaveLength(1);
   });
 
   it("bucketByLocalDay groups by user TZ", async () => {
     const sessions = [
-      { id: "a", clockInAt: new Date("2026-05-12T05:30:00Z"), clockOutAt: new Date("2026-05-12T07:30:00Z") },
-      { id: "b", clockInAt: new Date("2026-05-12T13:00:00Z"), clockOutAt: new Date("2026-05-12T17:00:00Z") },
-      { id: "c", clockInAt: new Date("2026-05-13T03:00:00Z"), clockOutAt: new Date("2026-05-13T05:00:00Z") },
+      {
+        id: "a",
+        clockInAt: new Date("2026-05-12T05:30:00Z"),
+        clockOutAt: new Date("2026-05-12T07:30:00Z"),
+      },
+      {
+        id: "b",
+        clockInAt: new Date("2026-05-12T13:00:00Z"),
+        clockOutAt: new Date("2026-05-12T17:00:00Z"),
+      },
+      {
+        id: "c",
+        clockInAt: new Date("2026-05-13T03:00:00Z"),
+        clockOutAt: new Date("2026-05-13T05:00:00Z"),
+      },
     ];
     // In America/Chicago (UTC-5 in May DST), the "c" session at 03:00 UTC = 22:00 prev local day.
     const buckets = bucketByLocalDay(sessions as never, "America/Chicago");
@@ -3927,11 +4461,15 @@ import type { PrismaClient, TimeSession } from "@prisma/client";
 import { formatLocal } from "@/lib/time";
 
 export async function sessionsInRange(
-  prisma: PrismaClient, userId: string, from: Date, to: Date,
+  prisma: PrismaClient,
+  userId: string,
+  from: Date,
+  to: Date,
 ): Promise<TimeSession[]> {
   return prisma.timeSession.findMany({
     where: {
-      userId, deletedAt: null,
+      userId,
+      deletedAt: null,
       OR: [
         { clockInAt: { gte: from, lt: to } },
         { AND: [{ clockInAt: { lt: from } }, { clockOutAt: { gt: from } }] },
@@ -3944,8 +4482,8 @@ export async function sessionsInRange(
 export function bucketByLocalDay(
   sessions: ReadonlyArray<Pick<TimeSession, "id" | "clockInAt" | "clockOutAt">>,
   tz: string,
-): Record<string, typeof sessions[number][]> {
-  const out: Record<string, typeof sessions[number][]> = {};
+): Record<string, (typeof sessions)[number][]> {
+  const out: Record<string, (typeof sessions)[number][]> = {};
   for (const s of sessions) {
     const day = formatLocal(s.clockInAt, tz, "yyyy-MM-dd");
     (out[day] ??= []).push(s);
@@ -3970,6 +4508,7 @@ git commit -m "feat(calendar): range query + local-day bucketing"
 ### Task 6.2: Month grid component
 
 **Files:**
+
 - Create: `src/features/attendance/components/month-grid.tsx`
 - Create: `src/app/(app)/calendar/page.tsx`
 
@@ -3982,7 +4521,11 @@ import Link from "next/link";
 type DayBucket = { dateLocal: string; minutes: number; count: number };
 
 export function MonthGrid({
-  year, month, days, today, onSelect,
+  year,
+  month,
+  days,
+  today,
+  onSelect,
 }: {
   year: number;
   month: number; // 0-indexed
@@ -4004,10 +4547,15 @@ export function MonthGrid({
   const max = Math.max(60, ...days.map((d) => d.minutes));
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] p-4" data-testid="month-grid">
+    <div
+      className="rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] p-4"
+      data-testid="month-grid"
+    >
       <div className="mb-2 grid grid-cols-7 text-xs uppercase tracking-wider text-[var(--text-dim)]">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="px-2 py-1">{d}</div>
+          <div key={d} className="px-2 py-1">
+            {d}
+          </div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
@@ -4025,12 +4573,16 @@ export function MonthGrid({
                 isToday ? "ring-1 ring-[var(--accent)]" : "ring-0"
               } hover:bg-[var(--bg-elev-2)]`}
             >
-              <span className="text-xs text-[var(--text-dim)]">{Number(cell.dateLocal.slice(-2))}</span>
+              <span className="text-xs text-[var(--text-dim)]">
+                {Number(cell.dateLocal.slice(-2))}
+              </span>
               <div className="mt-auto h-1 w-full rounded bg-[var(--bg-elev-2)]">
                 <div className="h-full rounded bg-[var(--accent)]" style={{ width: `${pct}%` }} />
               </div>
               {cell.count > 0 && (
-                <span className="text-[10px] text-[var(--text-ghost)]">{cell.count} session{cell.count === 1 ? "" : "s"}</span>
+                <span className="text-[10px] text-[var(--text-ghost)]">
+                  {cell.count} session{cell.count === 1 ? "" : "s"}
+                </span>
               )}
             </button>
           );
@@ -4048,7 +4600,13 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sessionsInRange, bucketByLocalDay } from "@/features/attendance/calendar-queries";
 import { CalendarShell } from "@/features/attendance/components/calendar-shell";
-import { startOfDayInTz, endOfDayInTz, formatLocal, durationMinutes, systemClock } from "@/lib/time";
+import {
+  startOfDayInTz,
+  endOfDayInTz,
+  formatLocal,
+  durationMinutes,
+  systemClock,
+} from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -4099,6 +4657,7 @@ git commit -m "feat(calendar): month grid + page wiring"
 ### Task 6.3: Calendar shell with day sheet + week/month toggle + inline edit
 
 **Files:**
+
 - Create: `src/features/attendance/components/calendar-shell.tsx`
 - Create: `src/features/attendance/components/day-sheet.tsx`
 - Create: `src/features/attendance/components/edit-session-form.tsx`
@@ -4118,7 +4677,11 @@ export async function GET(req: Request) {
   const user = await requireUser();
   const url = new URL(req.url);
   const date = url.searchParams.get("date");
-  if (!date) return NextResponse.json({ ok: false, code: "VALIDATION", message: "date is required" }, { status: 400 });
+  if (!date)
+    return NextResponse.json(
+      { ok: false, code: "VALIDATION", message: "date is required" },
+      { status: 400 },
+    );
   const [y, m, d] = date.split("-").map(Number);
   const noon = new Date(Date.UTC(y!, (m ?? 1) - 1, d ?? 1, 12, 0, 0));
   const from = startOfDayInTz(noon, user.timezone);
@@ -4192,18 +4755,44 @@ export function EditSessionForm({ session, onSaved }: { session: Session; onSave
     >
       <div>
         <Label htmlFor={`in-${session.id}`}>Clock in</Label>
-        <Input id={`in-${session.id}`} name="clockInAt" type="datetime-local" defaultValue={isoToLocalInput(session.clockInAt)} required data-testid={`edit-in-${session.id}`} />
+        <Input
+          id={`in-${session.id}`}
+          name="clockInAt"
+          type="datetime-local"
+          defaultValue={isoToLocalInput(session.clockInAt)}
+          required
+          data-testid={`edit-in-${session.id}`}
+        />
       </div>
       <div>
         <Label htmlFor={`out-${session.id}`}>Clock out</Label>
-        <Input id={`out-${session.id}`} name="clockOutAt" type="datetime-local" defaultValue={session.clockOutAt ? isoToLocalInput(session.clockOutAt) : ""} required data-testid={`edit-out-${session.id}`} />
+        <Input
+          id={`out-${session.id}`}
+          name="clockOutAt"
+          type="datetime-local"
+          defaultValue={session.clockOutAt ? isoToLocalInput(session.clockOutAt) : ""}
+          required
+          data-testid={`edit-out-${session.id}`}
+        />
       </div>
       <div>
         <Label htmlFor={`r-${session.id}`}>Reason</Label>
-        <Input id={`r-${session.id}`} name="reason" type="text" required data-testid={`edit-reason-${session.id}`} />
+        <Input
+          id={`r-${session.id}`}
+          name="reason"
+          type="text"
+          required
+          data-testid={`edit-reason-${session.id}`}
+        />
       </div>
-      {error && <p data-testid={`edit-error-${session.id}`} className="text-sm text-[var(--danger)]">{error}</p>}
-      <Button type="submit" disabled={pending} data-testid={`edit-save-${session.id}`}>{pending ? "Savingâ€¦" : "Save"}</Button>
+      {error && (
+        <p data-testid={`edit-error-${session.id}`} className="text-sm text-[var(--danger)]">
+          {error}
+        </p>
+      )}
+      <Button type="submit" disabled={pending} data-testid={`edit-save-${session.id}`}>
+        {pending ? "Savingâ€¦" : "Save"}
+      </Button>
     </form>
   );
 }
@@ -4219,12 +4808,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EditSessionForm } from "./edit-session-form";
 
-type SessionRow = { id: string; clockInAt: string; clockOutAt: string | null; autoClosed: boolean; notes: string | null };
+type SessionRow = {
+  id: string;
+  clockInAt: string;
+  clockOutAt: string | null;
+  autoClosed: boolean;
+  notes: string | null;
+};
 
 const SEVEN_DAYS_MS = 7 * 24 * 3_600_000;
 
 export function DaySheet({
-  open, date, timezone, onOpenChange,
+  open,
+  date,
+  timezone,
+  onOpenChange,
 }: {
   open: boolean;
   date: string | null;
@@ -4244,7 +4842,11 @@ export function DaySheet({
       .finally(() => setLoading(false));
   }, [open, date]);
 
-  const fmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: timezone });
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: timezone,
+  });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -4255,28 +4857,50 @@ export function DaySheet({
         {loading ? (
           <p className="text-sm text-[var(--text-dim)]">Loadingâ€¦</p>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-[var(--text-dim)]" data-testid="day-sheet-empty">No sessions on this day.</p>
+          <p className="text-sm text-[var(--text-dim)]" data-testid="day-sheet-empty">
+            No sessions on this day.
+          </p>
         ) : (
           <ul className="mt-4 space-y-3" data-testid="day-sheet-list">
             {sessions.map((s) => {
               const inWindow = Date.now() - new Date(s.clockInAt).getTime() <= SEVEN_DAYS_MS;
               const isEditing = editing === s.id;
               return (
-                <li key={s.id} className="rounded-lg border border-[var(--border)] p-3 text-sm" data-testid={`session-row-${s.id}`}>
+                <li
+                  key={s.id}
+                  className="rounded-lg border border-[var(--border)] p-3 text-sm"
+                  data-testid={`session-row-${s.id}`}
+                >
                   <div className="flex items-center justify-between">
                     <span className="font-mono">
-                      {fmt.format(new Date(s.clockInAt))} â†’ {s.clockOutAt ? fmt.format(new Date(s.clockOutAt)) : "â€”"}
+                      {fmt.format(new Date(s.clockInAt))} â†’{" "}
+                      {s.clockOutAt ? fmt.format(new Date(s.clockOutAt)) : "â€”"}
                     </span>
                     <div className="flex items-center gap-2">
                       {s.autoClosed && <Badge variant="secondary">auto-closed</Badge>}
                       {inWindow && !isEditing && (
-                        <Button size="sm" variant="ghost" onClick={() => setEditing(s.id)} data-testid={`edit-button-${s.id}`}>Edit</Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditing(s.id)}
+                          data-testid={`edit-button-${s.id}`}
+                        >
+                          Edit
+                        </Button>
                       )}
                     </div>
                   </div>
                   {isEditing && (
                     <div className="mt-3">
-                      <EditSessionForm session={s} onSaved={() => { setEditing(null); void fetch(`/api/me/sessions?date=${date}`, { cache: "no-store" }).then((r) => r.json()).then((j) => setSessions(j.sessions ?? [])); }} />
+                      <EditSessionForm
+                        session={s}
+                        onSaved={() => {
+                          setEditing(null);
+                          void fetch(`/api/me/sessions?date=${date}`, { cache: "no-store" })
+                            .then((r) => r.json())
+                            .then((j) => setSessions(j.sessions ?? []));
+                        }}
+                      />
                     </div>
                   )}
                 </li>
@@ -4303,7 +4927,11 @@ import { DaySheet } from "./day-sheet";
 type DayBucket = { dateLocal: string; minutes: number; count: number };
 
 export function CalendarShell({
-  year, month, today, days, timezone,
+  year,
+  month,
+  today,
+  days,
+  timezone,
 }: {
   year: number;
   month: number; // 0-indexed
@@ -4313,7 +4941,10 @@ export function CalendarShell({
   userId: string;
 }) {
   const [openDate, setOpenDate] = useState<string | null>(null);
-  const heading = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const heading = new Date(year, month, 1).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
   const prev = month === 0 ? { y: year - 1, m: 12 } : { y: year, m: month };
   const next = month === 11 ? { y: year + 1, m: 1 } : { y: year, m: month + 2 };
 
@@ -4334,7 +4965,12 @@ export function CalendarShell({
         </div>
       </div>
       <MonthGrid year={year} month={month} days={days} today={today} onSelect={setOpenDate} />
-      <DaySheet open={!!openDate} date={openDate} timezone={timezone} onOpenChange={(o) => !o && setOpenDate(null)} />
+      <DaySheet
+        open={!!openDate}
+        date={openDate}
+        timezone={timezone}
+        onOpenChange={(o) => !o && setOpenDate(null)}
+      />
     </div>
   );
 }
@@ -4358,6 +4994,7 @@ git commit -m "feat(calendar): shell, day sheet, inline edit form"
 ### Task 6.4: E2E â€” employee edits own session inside 7-day window
 
 **Files:**
+
 - Create: `tests/e2e/calendar/edit-own.spec.ts`
 
 - [ ] **Step 1: Write test**
@@ -4385,7 +5022,10 @@ test("employee edits own session via day sheet", async ({ page }) => {
   await expect(page.getByTestId("day-sheet-list")).toBeVisible();
 
   const rows = page.locator('[data-testid^="session-row-"]');
-  await rows.first().getByTestId(/^edit-button-/).click();
+  await rows
+    .first()
+    .getByTestId(/^edit-button-/)
+    .click();
 
   const reason = page.getByTestId(/^edit-reason-/);
   await reason.fill("forgot to clock in on time");
@@ -4410,7 +5050,6 @@ git commit -m "test: e2e employee edits own session in 7-day window"
 
 ---
 
-
 ## Milestone 7 â€” Reports + CSV (`/reports` + `/api/reports/csv`)
 
 End state: KPI row, date-range picker with presets (this week / last week / **semi-monthly pay period (1stâ€“15th, 16thâ€“end)** / custom), per-user table with daily breakdown, and a working streaming CSV download. Admins can pick any user; employees see themselves. E2E covers a download.
@@ -4418,6 +5057,7 @@ End state: KPI row, date-range picker with presets (this week / last week / **se
 ### Task 7.1: Reports service (KPIs + table data)
 
 **Files:**
+
 - Create: `src/features/reports/service.ts`
 - Create: `src/features/reports/types.ts`
 - Create: `tests/integration/reports/service.test.ts`
@@ -4460,8 +5100,12 @@ import { reportForRange, kpiSet } from "@/features/reports/service";
 import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.timeSession.deleteMany();
   await db.prisma.user.deleteMany({ where: { id: { not: "system" } } });
@@ -4469,12 +5113,26 @@ beforeEach(async () => {
 
 describe("reportForRange", () => {
   it("aggregates per user, per local day", async () => {
-    const u = await db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") } });
+    const u = await db.prisma.user.create({
+      data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") },
+    });
     await db.prisma.timeSession.createMany({
       data: [
-        { userId: u.id, clockInAt: new Date("2026-05-12T13:00:00Z"), clockOutAt: new Date("2026-05-12T17:00:00Z") },
-        { userId: u.id, clockInAt: new Date("2026-05-12T18:00:00Z"), clockOutAt: new Date("2026-05-12T20:00:00Z") },
-        { userId: u.id, clockInAt: new Date("2026-05-13T13:00:00Z"), clockOutAt: new Date("2026-05-13T17:30:00Z") },
+        {
+          userId: u.id,
+          clockInAt: new Date("2026-05-12T13:00:00Z"),
+          clockOutAt: new Date("2026-05-12T17:00:00Z"),
+        },
+        {
+          userId: u.id,
+          clockInAt: new Date("2026-05-12T18:00:00Z"),
+          clockOutAt: new Date("2026-05-12T20:00:00Z"),
+        },
+        {
+          userId: u.id,
+          clockInAt: new Date("2026-05-13T13:00:00Z"),
+          clockOutAt: new Date("2026-05-13T17:30:00Z"),
+        },
       ],
     });
     const rows = await reportForRange(db.prisma, {
@@ -4491,10 +5149,26 @@ describe("reportForRange", () => {
   });
 
   it("filters by userId when provided", async () => {
-    const u1 = await db.prisma.user.create({ data: { email: "u1@x.com", name: "U1", passwordHash: await hash("password1234aa") } });
-    const u2 = await db.prisma.user.create({ data: { email: "u2@x.com", name: "U2", passwordHash: await hash("password1234aa") } });
-    await db.prisma.timeSession.create({ data: { userId: u1.id, clockInAt: new Date("2026-05-12T13:00:00Z"), clockOutAt: new Date("2026-05-12T17:00:00Z") } });
-    await db.prisma.timeSession.create({ data: { userId: u2.id, clockInAt: new Date("2026-05-12T13:00:00Z"), clockOutAt: new Date("2026-05-12T17:00:00Z") } });
+    const u1 = await db.prisma.user.create({
+      data: { email: "u1@x.com", name: "U1", passwordHash: await hash("password1234aa") },
+    });
+    const u2 = await db.prisma.user.create({
+      data: { email: "u2@x.com", name: "U2", passwordHash: await hash("password1234aa") },
+    });
+    await db.prisma.timeSession.create({
+      data: {
+        userId: u1.id,
+        clockInAt: new Date("2026-05-12T13:00:00Z"),
+        clockOutAt: new Date("2026-05-12T17:00:00Z"),
+      },
+    });
+    await db.prisma.timeSession.create({
+      data: {
+        userId: u2.id,
+        clockInAt: new Date("2026-05-12T13:00:00Z"),
+        clockOutAt: new Date("2026-05-12T17:00:00Z"),
+      },
+    });
     const rows = await reportForRange(db.prisma, {
       from: new Date("2026-05-12T00:00:00Z"),
       to: new Date("2026-05-12T23:59:59Z"),
@@ -4517,7 +5191,14 @@ pnpm test:int
 
 ```ts
 import type { PrismaClient } from "@prisma/client";
-import { formatLocal, durationMinutes, startOfDayInTz, endOfDayInTz, startOfWeekInTz, endOfWeekInTz } from "@/lib/time";
+import {
+  formatLocal,
+  durationMinutes,
+  startOfDayInTz,
+  endOfDayInTz,
+  startOfWeekInTz,
+  endOfWeekInTz,
+} from "@/lib/time";
 import type { UserRow, KpiSet } from "./types";
 
 export type ReportInput = {
@@ -4527,14 +5208,9 @@ export type ReportInput = {
   userId?: string;
 };
 
-export async function reportForRange(
-  prisma: PrismaClient,
-  input: ReportInput,
-): Promise<UserRow[]> {
+export async function reportForRange(prisma: PrismaClient, input: ReportInput): Promise<UserRow[]> {
   const users = await prisma.user.findMany({
-    where: input.userId
-      ? { id: input.userId }
-      : { deactivatedAt: null, id: { not: "system" } },
+    where: input.userId ? { id: input.userId } : { deactivatedAt: null, id: { not: "system" } },
     orderBy: { name: "asc" },
   });
 
@@ -4581,7 +5257,12 @@ export async function reportForRange(
   return Array.from(byUser.values());
 }
 
-export async function kpiSet(prisma: PrismaClient, userId: string, tz: string, now: Date): Promise<KpiSet> {
+export async function kpiSet(
+  prisma: PrismaClient,
+  userId: string,
+  tz: string,
+  now: Date,
+): Promise<KpiSet> {
   const todayFrom = startOfDayInTz(now, tz);
   const todayTo = endOfDayInTz(now, tz);
   const thisWeekFrom = startOfWeekInTz(now, tz);
@@ -4625,6 +5306,7 @@ git commit -m "feat(reports): aggregation service + KPI set"
 ### Task 7.2: Range preset helpers (incl. semi-monthly pay period)
 
 **Files:**
+
 - Create: `src/features/reports/ranges.ts`
 - Create: `tests/unit/reports/ranges.test.ts`
 
@@ -4667,9 +5349,12 @@ describe("resolveRange", () => {
 
 ```ts
 import {
-  startOfDayInTz, endOfDayInTz,
-  startOfWeekInTz, endOfWeekInTz,
-  startOfSemiMonthlyInTz, endOfSemiMonthlyInTz,
+  startOfDayInTz,
+  endOfDayInTz,
+  startOfWeekInTz,
+  endOfWeekInTz,
+  startOfSemiMonthlyInTz,
+  endOfSemiMonthlyInTz,
 } from "@/lib/time";
 
 export type RangeKey = "today" | "thisWeek" | "lastWeek" | "payPeriod" | "custom";
@@ -4678,13 +5363,16 @@ export type Range = { from: Date; to: Date };
 
 export function resolveRange(key: RangeKey, now: Date, tz: string, custom?: Range): Range {
   switch (key) {
-    case "today": return { from: startOfDayInTz(now, tz), to: endOfDayInTz(now, tz) };
-    case "thisWeek": return { from: startOfWeekInTz(now, tz), to: endOfWeekInTz(now, tz) };
+    case "today":
+      return { from: startOfDayInTz(now, tz), to: endOfDayInTz(now, tz) };
+    case "thisWeek":
+      return { from: startOfWeekInTz(now, tz), to: endOfWeekInTz(now, tz) };
     case "lastWeek": {
       const ref = new Date(now.getTime() - 7 * 24 * 3_600_000);
       return { from: startOfWeekInTz(ref, tz), to: endOfWeekInTz(ref, tz) };
     }
-    case "payPeriod": return { from: startOfSemiMonthlyInTz(now, tz), to: endOfSemiMonthlyInTz(now, tz) };
+    case "payPeriod":
+      return { from: startOfSemiMonthlyInTz(now, tz), to: endOfSemiMonthlyInTz(now, tz) };
     case "custom":
       if (!custom) throw new Error("custom range requires explicit from/to");
       return custom;
@@ -4708,6 +5396,7 @@ git commit -m "feat(reports): range preset helpers (incl. semi-monthly)"
 ### Task 7.3: `/reports` page (KPI row, picker, table)
 
 **Files:**
+
 - Create: `src/app/(app)/reports/page.tsx`
 - Create: `src/features/reports/components/kpi-row.tsx`
 - Create: `src/features/reports/components/range-picker.tsx`
@@ -4734,7 +5423,9 @@ function Card({ label, value, testId }: { label: string; value: string; testId: 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] p-4">
       <p className="text-xs uppercase tracking-wider text-[var(--text-dim)]">{label}</p>
-      <p className="mt-1 font-mono text-2xl tabular-nums" data-testid={testId}>{value}</p>
+      <p className="mt-1 font-mono text-2xl tabular-nums" data-testid={testId}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -4772,25 +5463,52 @@ export function RangePicker({ users }: { users?: Array<{ id: string; name: strin
     <div className="flex flex-wrap items-end gap-3" data-testid="range-picker">
       <div className="flex gap-2">
         {PRESETS.map((p) => (
-          <Button key={p.key} variant={active === p.key ? "default" : "ghost"} size="sm" onClick={() => setQuery({ range: p.key, from: null, to: null })} data-testid={`preset-${p.key}`}>{p.label}</Button>
+          <Button
+            key={p.key}
+            variant={active === p.key ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setQuery({ range: p.key, from: null, to: null })}
+            data-testid={`preset-${p.key}`}
+          >
+            {p.label}
+          </Button>
         ))}
       </div>
       <div className="flex items-end gap-2">
         <div>
           <label className="block text-xs text-[var(--text-dim)]">From</label>
-          <Input type="date" defaultValue={params.get("from") ?? ""} onChange={(e) => setQuery({ range: "custom", from: e.target.value })} data-testid="range-from" />
+          <Input
+            type="date"
+            defaultValue={params.get("from") ?? ""}
+            onChange={(e) => setQuery({ range: "custom", from: e.target.value })}
+            data-testid="range-from"
+          />
         </div>
         <div>
           <label className="block text-xs text-[var(--text-dim)]">To</label>
-          <Input type="date" defaultValue={params.get("to") ?? ""} onChange={(e) => setQuery({ range: "custom", to: e.target.value })} data-testid="range-to" />
+          <Input
+            type="date"
+            defaultValue={params.get("to") ?? ""}
+            onChange={(e) => setQuery({ range: "custom", to: e.target.value })}
+            data-testid="range-to"
+          />
         </div>
       </div>
       {users && (
         <div>
           <label className="block text-xs text-[var(--text-dim)]">User</label>
-          <select className="rounded border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1 text-sm" defaultValue={params.get("userId") ?? ""} onChange={(e) => setQuery({ userId: e.target.value || null })} data-testid="user-filter">
+          <select
+            className="rounded border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1 text-sm"
+            defaultValue={params.get("userId") ?? ""}
+            onChange={(e) => setQuery({ userId: e.target.value || null })}
+            data-testid="user-filter"
+          >
             <option value="">All users</option>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
           </select>
         </div>
       )}
@@ -4809,9 +5527,17 @@ import { formatHm } from "@/features/attendance/queries";
 import type { UserRow } from "../types";
 
 export function UserTable({ rows }: { rows: UserRow[] }) {
-  if (rows.length === 0) return <p className="text-sm text-[var(--text-dim)]" data-testid="report-empty">No sessions in this range.</p>;
+  if (rows.length === 0)
+    return (
+      <p className="text-sm text-[var(--text-dim)]" data-testid="report-empty">
+        No sessions in this range.
+      </p>
+    );
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--border)]" data-testid="report-table">
+    <div
+      className="overflow-x-auto rounded-xl border border-[var(--border)]"
+      data-testid="report-table"
+    >
       <table className="min-w-full divide-y divide-[var(--border)]">
         <thead className="bg-[var(--bg-elev)] text-left text-xs uppercase tracking-wider text-[var(--text-dim)]">
           <tr>
@@ -4823,12 +5549,21 @@ export function UserTable({ rows }: { rows: UserRow[] }) {
         <tbody className="divide-y divide-[var(--border)]">
           {rows.map((r) => (
             <tr key={r.userId} data-testid={`row-${r.userId}`}>
-              <td className="px-4 py-3"><div className="font-medium">{r.name}</div><div className="text-xs text-[var(--text-dim)]">{r.email}</div></td>
+              <td className="px-4 py-3">
+                <div className="font-medium">{r.name}</div>
+                <div className="text-xs text-[var(--text-dim)]">{r.email}</div>
+              </td>
               <td className="px-4 py-3 font-mono">{formatHm(r.totalMinutes)}</td>
               <td className="px-4 py-3 text-sm">
                 <ul className="flex flex-wrap gap-2">
                   {r.days.map((d) => (
-                    <li key={d.dateLocal} className="rounded bg-[var(--bg-elev-2)] px-2 py-1 font-mono"><span className="text-[var(--text-dim)]">{d.dateLocal.slice(5)}</span> {formatHm(d.minutes)}</li>
+                    <li
+                      key={d.dateLocal}
+                      className="rounded bg-[var(--bg-elev-2)] px-2 py-1 font-mono"
+                    >
+                      <span className="text-[var(--text-dim)]">{d.dateLocal.slice(5)}</span>{" "}
+                      {formatHm(d.minutes)}
+                    </li>
                   ))}
                 </ul>
               </td>
@@ -4855,21 +5590,36 @@ import { UserTable } from "@/features/reports/components/user-table";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const user = await requireUser();
   const sp = await searchParams;
   const now = systemClock.now();
   const key = (sp.range as RangeKey) ?? "thisWeek";
-  const custom = sp.from && sp.to ? { from: new Date(`${sp.from}T00:00:00`), to: new Date(`${sp.to}T23:59:59`) } : undefined;
+  const custom =
+    sp.from && sp.to
+      ? { from: new Date(`${sp.from}T00:00:00`), to: new Date(`${sp.to}T23:59:59`) }
+      : undefined;
   const range = resolveRange(key, now, user.timezone, custom);
 
   const filterUserId = user.role === "ADMIN" ? sp.userId : user.id;
 
   const [rows, kpi, users] = await Promise.all([
-    reportForRange(prisma, { from: range.from, to: range.to, timezone: user.timezone, userId: filterUserId }),
+    reportForRange(prisma, {
+      from: range.from,
+      to: range.to,
+      timezone: user.timezone,
+      userId: filterUserId,
+    }),
     kpiSet(prisma, user.id, user.timezone, now),
     user.role === "ADMIN"
-      ? prisma.user.findMany({ where: { deactivatedAt: null, id: { not: "system" } }, select: { id: true, name: true } })
+      ? prisma.user.findMany({
+          where: { deactivatedAt: null, id: { not: "system" } },
+          select: { id: true, name: true },
+        })
       : Promise.resolve(undefined),
   ]);
 
@@ -4894,6 +5644,7 @@ git commit -m "feat(reports): page with KPI row, range picker, user table"
 ### Task 7.4: Streaming CSV export endpoint
 
 **Files:**
+
 - Create: `src/app/api/reports/csv/route.ts`
 
 - [ ] **Step 1: Write `src/app/api/reports/csv/route.ts`**
@@ -4911,11 +5662,14 @@ export async function GET(req: Request) {
   const key = (url.searchParams.get("range") as RangeKey) ?? "thisWeek";
   const fromParam = url.searchParams.get("from");
   const toParam = url.searchParams.get("to");
-  const custom = fromParam && toParam ? { from: new Date(`${fromParam}T00:00:00`), to: new Date(`${toParam}T23:59:59`) } : undefined;
+  const custom =
+    fromParam && toParam
+      ? { from: new Date(`${fromParam}T00:00:00`), to: new Date(`${toParam}T23:59:59`) }
+      : undefined;
   const range = resolveRange(key, systemClock.now(), user.timezone, custom);
 
   const userIdParam = url.searchParams.get("userId");
-  const filterUserId = user.role === "ADMIN" ? userIdParam ?? undefined : user.id;
+  const filterUserId = user.role === "ADMIN" ? (userIdParam ?? undefined) : user.id;
 
   const sessions = await prisma.timeSession.findMany({
     where: {
@@ -4930,24 +5684,48 @@ export async function GET(req: Request) {
   const stream = new ReadableStream({
     start(controller) {
       const enc = new TextEncoder();
-      controller.enqueue(enc.encode(csvHeader([
-        "user_email", "user_name", "date_local", "session_id",
-        "clock_in_local", "clock_out_local", "duration_minutes",
-        "auto_closed", "edited", "notes",
-        "clock_in_utc", "clock_out_utc",
-      ])));
+      controller.enqueue(
+        enc.encode(
+          csvHeader([
+            "user_email",
+            "user_name",
+            "date_local",
+            "session_id",
+            "clock_in_local",
+            "clock_out_local",
+            "duration_minutes",
+            "auto_closed",
+            "edited",
+            "notes",
+            "clock_in_utc",
+            "clock_out_utc",
+          ]),
+        ),
+      );
       for (const s of sessions) {
         const tz = user.timezone;
         const date = formatLocal(s.clockInAt, tz, "yyyy-MM-dd");
         const inLocal = formatLocal(s.clockInAt, tz, "yyyy-MM-dd HH:mm");
         const outLocal = s.clockOutAt ? formatLocal(s.clockOutAt, tz, "yyyy-MM-dd HH:mm") : "";
         const minutes = durationMinutes(s.clockInAt, s.clockOutAt ?? systemClock.now());
-        controller.enqueue(enc.encode(csvRow([
-          s.user.email, s.user.name, date, s.id,
-          inLocal, outLocal, minutes,
-          s.autoClosed, s.auditLogs.length > 0, s.notes,
-          s.clockInAt, s.clockOutAt,
-        ])));
+        controller.enqueue(
+          enc.encode(
+            csvRow([
+              s.user.email,
+              s.user.name,
+              date,
+              s.id,
+              inLocal,
+              outLocal,
+              minutes,
+              s.autoClosed,
+              s.auditLogs.length > 0,
+              s.notes,
+              s.clockInAt,
+              s.clockOutAt,
+            ]),
+          ),
+        );
       }
       controller.close();
     },
@@ -4982,6 +5760,7 @@ git commit -m "feat(reports): streaming CSV export"
 ### Task 7.5: E2E â€” CSV download
 
 **Files:**
+
 - Create: `tests/e2e/reports/csv.spec.ts`
 
 - [ ] **Step 1: Write test**
@@ -5001,7 +5780,9 @@ test("admin downloads CSV with expected header", async ({ page }) => {
   expect(path).toBeTruthy();
   const fs = await import("node:fs/promises");
   const head = (await fs.readFile(path!, "utf-8")).split("\r\n")[0];
-  expect(head).toBe("user_email,user_name,date_local,session_id,clock_in_local,clock_out_local,duration_minutes,auto_closed,edited,notes,clock_in_utc,clock_out_utc");
+  expect(head).toBe(
+    "user_email,user_name,date_local,session_id,clock_in_local,clock_out_local,duration_minutes,auto_closed,edited,notes,clock_in_utc,clock_out_utc",
+  );
 });
 ```
 
@@ -5020,7 +5801,6 @@ git commit -m "test: e2e CSV download"
 
 ---
 
-
 ## Milestone 8 â€” Admin (`/admin/users`, `/admin/audit`)
 
 End state: admin can create employees, reset passwords (which sets `mustChangePassword: true`), deactivate users, and change roles. Audit log page lists every recorded change with filters and a before/after JSON expand. RBAC is verified by an integration test that hits every server action with non-admin and expects FORBIDDEN.
@@ -5028,6 +5808,7 @@ End state: admin can create employees, reset passwords (which sets `mustChangePa
 ### Task 8.1: User-management service + tests
 
 **Files:**
+
 - Create: `src/features/users/admin-service.ts`
 - Create: `tests/integration/users/admin-service.test.ts`
 
@@ -5038,14 +5819,23 @@ End state: admin can create employees, reset passwords (which sets `mustChangePa
 ```ts
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { setupTestDb, type TestDb } from "../helpers/db";
-import { createUser, resetPassword, deactivateUser, changeRole } from "@/features/users/admin-service";
+import {
+  createUser,
+  resetPassword,
+  deactivateUser,
+  changeRole,
+} from "@/features/users/admin-service";
 import { FakeClock } from "@/lib/time";
 import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T13:00:00Z"));
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.auditLog.deleteMany();
   await db.prisma.user.deleteMany({ where: { id: { not: "system" } } });
@@ -5053,33 +5843,80 @@ beforeEach(async () => {
 
 describe("admin user service", () => {
   it("createUser persists user with mustChangePassword=true and writes CREATE_USER audit", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
     const u = await createUser({ prisma: db.prisma, clock }, admin.id, {
-      email: "new@x.com", name: "New", initialPassword: "password1234aa", role: "EMPLOYEE", timezone: "America/Chicago",
+      email: "new@x.com",
+      name: "New",
+      initialPassword: "password1234aa",
+      role: "EMPLOYEE",
+      timezone: "America/Chicago",
     });
     expect(u.mustChangePassword).toBe(true);
-    const audit = await db.prisma.auditLog.findFirst({ where: { actorUserId: admin.id, action: "CREATE_USER" } });
+    const audit = await db.prisma.auditLog.findFirst({
+      where: { actorUserId: admin.id, action: "CREATE_USER" },
+    });
     expect(audit).toBeTruthy();
   });
 
   it("createUser rejects duplicate email with VALIDATION", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    await db.prisma.user.create({ data: { email: "dup@x.com", name: "Dup", passwordHash: await hash("password1234aa") } });
-    await expect(createUser({ prisma: db.prisma, clock }, admin.id, { email: "dup@x.com", name: "X", initialPassword: "password1234aa", role: "EMPLOYEE", timezone: "America/Chicago" }))
-      .rejects.toMatchObject({ code: "VALIDATION" });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    await db.prisma.user.create({
+      data: { email: "dup@x.com", name: "Dup", passwordHash: await hash("password1234aa") },
+    });
+    await expect(
+      createUser({ prisma: db.prisma, clock }, admin.id, {
+        email: "dup@x.com",
+        name: "X",
+        initialPassword: "password1234aa",
+        role: "EMPLOYEE",
+        timezone: "America/Chicago",
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
   });
 
   it("resetPassword sets mustChangePassword=true", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    const e = await db.prisma.user.create({ data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") } });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    const e = await db.prisma.user.create({
+      data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") },
+    });
     await resetPassword({ prisma: db.prisma, clock }, admin.id, e.id, "newpassword1234");
     const fresh = await db.prisma.user.findUniqueOrThrow({ where: { id: e.id } });
     expect(fresh.mustChangePassword).toBe(true);
   });
 
   it("deactivateUser sets deactivatedAt and writes audit", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    const e = await db.prisma.user.create({ data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") } });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    const e = await db.prisma.user.create({
+      data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") },
+    });
     await deactivateUser({ prisma: db.prisma, clock }, admin.id, e.id);
     const fresh = await db.prisma.user.findUniqueOrThrow({ where: { id: e.id } });
     expect(fresh.deactivatedAt).not.toBeNull();
@@ -5088,8 +5925,17 @@ describe("admin user service", () => {
   });
 
   it("changeRole writes ROLE_CHANGE audit with before/after", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    const e = await db.prisma.user.create({ data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") } });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    const e = await db.prisma.user.create({
+      data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") },
+    });
     await changeRole({ prisma: db.prisma, clock }, admin.id, e.id, "ADMIN");
     const audit = await db.prisma.auditLog.findFirst({ where: { action: "ROLE_CHANGE" } });
     expect(audit?.before).toMatchObject({ role: "EMPLOYEE" });
@@ -5097,9 +5943,20 @@ describe("admin user service", () => {
   });
 
   it("refuses to deactivate the system user or the last admin", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    await expect(deactivateUser({ prisma: db.prisma, clock }, admin.id, "system")).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(deactivateUser({ prisma: db.prisma, clock }, admin.id, admin.id)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    await expect(
+      deactivateUser({ prisma: db.prisma, clock }, admin.id, "system"),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      deactivateUser({ prisma: db.prisma, clock }, admin.id, admin.id),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
 ```
@@ -5129,22 +5986,40 @@ export type CreateUserInput = {
 };
 
 export async function createUser(d: Deps, actorId: string, input: CreateUserInput): Promise<User> {
-  if (input.initialPassword.length < 12) throw new ValidationError("Initial password must be at least 12 characters.");
+  if (input.initialPassword.length < 12)
+    throw new ValidationError("Initial password must be at least 12 characters.");
   const email = input.email.toLowerCase();
   const exists = await d.prisma.user.findUnique({ where: { email } });
   if (exists) throw new ValidationError("A user with that email already exists.");
   const passwordHash = await hashPassword(input.initialPassword);
   const user = await d.prisma.user.create({
-    data: { email, name: input.name, role: input.role, timezone: input.timezone, passwordHash, mustChangePassword: true },
+    data: {
+      email,
+      name: input.name,
+      role: input.role,
+      timezone: input.timezone,
+      passwordHash,
+      mustChangePassword: true,
+    },
   });
   await d.prisma.auditLog.create({
-    data: { actorUserId: actorId, action: "CREATE_USER", after: { id: user.id, email: user.email, role: user.role } },
+    data: {
+      actorUserId: actorId,
+      action: "CREATE_USER",
+      after: { id: user.id, email: user.email, role: user.role },
+    },
   });
   return user;
 }
 
-export async function resetPassword(d: Deps, actorId: string, userId: string, newPassword: string): Promise<void> {
-  if (newPassword.length < 12) throw new ValidationError("New password must be at least 12 characters.");
+export async function resetPassword(
+  d: Deps,
+  actorId: string,
+  userId: string,
+  newPassword: string,
+): Promise<void> {
+  if (newPassword.length < 12)
+    throw new ValidationError("New password must be at least 12 characters.");
   const user = await d.prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError();
   await d.prisma.user.update({
@@ -5152,7 +6027,12 @@ export async function resetPassword(d: Deps, actorId: string, userId: string, ne
     data: { passwordHash: await hashPassword(newPassword), mustChangePassword: true },
   });
   await d.prisma.auditLog.create({
-    data: { actorUserId: actorId, action: "EDIT_SESSION", reason: "password reset", after: { userId } },
+    data: {
+      actorUserId: actorId,
+      action: "EDIT_SESSION",
+      reason: "password reset",
+      after: { userId },
+    },
   });
 }
 
@@ -5171,13 +6051,26 @@ export async function deactivateUser(d: Deps, actorId: string, userId: string): 
     throw new ForbiddenError("Cannot deactivate the last active admin.");
   }
   const before = { id: user.id, deactivatedAt: user.deactivatedAt?.toISOString() ?? null };
-  const updated = await d.prisma.user.update({ where: { id: userId }, data: { deactivatedAt: d.clock.now() } });
+  const updated = await d.prisma.user.update({
+    where: { id: userId },
+    data: { deactivatedAt: d.clock.now() },
+  });
   await d.prisma.auditLog.create({
-    data: { actorUserId: actorId, action: "DEACTIVATE_USER", before, after: { id: updated.id, deactivatedAt: updated.deactivatedAt?.toISOString() ?? null } },
+    data: {
+      actorUserId: actorId,
+      action: "DEACTIVATE_USER",
+      before,
+      after: { id: updated.id, deactivatedAt: updated.deactivatedAt?.toISOString() ?? null },
+    },
   });
 }
 
-export async function changeRole(d: Deps, actorId: string, userId: string, role: "EMPLOYEE" | "ADMIN"): Promise<void> {
+export async function changeRole(
+  d: Deps,
+  actorId: string,
+  userId: string,
+  role: "EMPLOYEE" | "ADMIN",
+): Promise<void> {
   if (userId === "system") throw new ForbiddenError("Cannot change the system user's role.");
   const user = await d.prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError();
@@ -5209,6 +6102,7 @@ git commit -m "feat(users): admin service (create/reset/deactivate/changeRole) w
 ### Task 8.2: Admin server actions
 
 **Files:**
+
 - Create: `src/features/users/admin-actions.ts`
 
 - [ ] **Step 1: Write `src/features/users/admin-actions.ts`**
@@ -5238,7 +6132,9 @@ export async function createUserAction(input: unknown) {
     const u = await createUser({ prisma, clock: systemClock }, admin.id, p);
     revalidatePath("/admin/users");
     return { ok: true as const, userId: u.id };
-  } catch (e) { return toErrorEnvelope(e); }
+  } catch (e) {
+    return toErrorEnvelope(e);
+  }
 }
 
 const resetSchema = z.object({ userId: z.string().min(1), newPassword: z.string().min(12) });
@@ -5249,7 +6145,9 @@ export async function resetPasswordAction(input: unknown) {
     await resetPassword({ prisma, clock: systemClock }, admin.id, p.userId, p.newPassword);
     revalidatePath("/admin/users");
     return { ok: true as const };
-  } catch (e) { return toErrorEnvelope(e); }
+  } catch (e) {
+    return toErrorEnvelope(e);
+  }
 }
 
 const idSchema = z.object({ userId: z.string().min(1) });
@@ -5260,7 +6158,9 @@ export async function deactivateUserAction(input: unknown) {
     await deactivateUser({ prisma, clock: systemClock }, admin.id, p.userId);
     revalidatePath("/admin/users");
     return { ok: true as const };
-  } catch (e) { return toErrorEnvelope(e); }
+  } catch (e) {
+    return toErrorEnvelope(e);
+  }
 }
 
 const roleSchema = z.object({ userId: z.string().min(1), role: z.enum(["EMPLOYEE", "ADMIN"]) });
@@ -5271,7 +6171,9 @@ export async function changeRoleAction(input: unknown) {
     await changeRole({ prisma, clock: systemClock }, admin.id, p.userId, p.role);
     revalidatePath("/admin/users");
     return { ok: true as const };
-  } catch (e) { return toErrorEnvelope(e); }
+  } catch (e) {
+    return toErrorEnvelope(e);
+  }
 }
 ```
 
@@ -5285,6 +6187,7 @@ git commit -m "feat(users): admin server actions"
 ### Task 8.3: `/admin/users` page UI
 
 **Files:**
+
 - Create: `src/app/(app)/admin/users/page.tsx`
 - Create: `src/features/users/components/users-table.tsx`
 - Create: `src/features/users/components/new-user-dialog.tsx`
@@ -5334,7 +6237,14 @@ import { NewUserDialog } from "./new-user-dialog";
 import { ResetPasswordDialog } from "./reset-password-dialog";
 import { deactivateUserAction, changeRoleAction } from "../admin-actions";
 
-type Row = { id: string; email: string; name: string; role: "EMPLOYEE" | "ADMIN"; deactivatedAt: string | null; lastClockIn: string | null };
+type Row = {
+  id: string;
+  email: string;
+  name: string;
+  role: "EMPLOYEE" | "ADMIN";
+  deactivatedAt: string | null;
+  lastClockIn: string | null;
+};
 
 export function UsersTable({ rows }: { rows: Row[] }) {
   const [resetFor, setResetFor] = useState<Row | null>(null);
@@ -5343,27 +6253,71 @@ export function UsersTable({ rows }: { rows: Row[] }) {
       <div className="flex justify-end">
         <NewUserDialog />
       </div>
-      <div className="overflow-x-auto rounded-xl border border-[var(--border)]" data-testid="users-table">
+      <div
+        className="overflow-x-auto rounded-xl border border-[var(--border)]"
+        data-testid="users-table"
+      >
         <table className="min-w-full divide-y divide-[var(--border)] text-sm">
           <thead className="bg-[var(--bg-elev)] text-left text-xs uppercase tracking-wider text-[var(--text-dim)]">
-            <tr><th className="px-4 py-2">Name</th><th className="px-4 py-2">Email</th><th className="px-4 py-2">Role</th><th className="px-4 py-2">Status</th><th className="px-4 py-2">Last clock-in</th><th className="px-4 py-2">Actions</th></tr>
+            <tr>
+              <th className="px-4 py-2">Name</th>
+              <th className="px-4 py-2">Email</th>
+              <th className="px-4 py-2">Role</th>
+              <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Last clock-in</th>
+              <th className="px-4 py-2">Actions</th>
+            </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
             {rows.map((r) => (
               <tr key={r.id} data-testid={`user-row-${r.id}`}>
                 <td className="px-4 py-3">{r.name}</td>
                 <td className="px-4 py-3 font-mono text-xs">{r.email}</td>
-                <td className="px-4 py-3"><Badge variant={r.role === "ADMIN" ? "default" : "secondary"}>{r.role}</Badge></td>
-                <td className="px-4 py-3">{r.deactivatedAt ? <Badge variant="secondary">deactivated</Badge> : <Badge>active</Badge>}</td>
-                <td className="px-4 py-3 font-mono text-xs">{r.lastClockIn ? r.lastClockIn.slice(0, 16).replace("T", " ") : "â€”"}</td>
+                <td className="px-4 py-3">
+                  <Badge variant={r.role === "ADMIN" ? "default" : "secondary"}>{r.role}</Badge>
+                </td>
+                <td className="px-4 py-3">
+                  {r.deactivatedAt ? (
+                    <Badge variant="secondary">deactivated</Badge>
+                  ) : (
+                    <Badge>active</Badge>
+                  )}
+                </td>
+                <td className="px-4 py-3 font-mono text-xs">
+                  {r.lastClockIn ? r.lastClockIn.slice(0, 16).replace("T", " ") : "â€”"}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => setResetFor(r)} data-testid={`reset-${r.id}`}>Reset password</Button>
-                    <Button size="sm" variant="ghost" onClick={() => void changeRoleAction({ userId: r.id, role: r.role === "ADMIN" ? "EMPLOYEE" : "ADMIN" })} data-testid={`toggle-role-${r.id}`}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setResetFor(r)}
+                      data-testid={`reset-${r.id}`}
+                    >
+                      Reset password
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        void changeRoleAction({
+                          userId: r.id,
+                          role: r.role === "ADMIN" ? "EMPLOYEE" : "ADMIN",
+                        })
+                      }
+                      data-testid={`toggle-role-${r.id}`}
+                    >
                       {r.role === "ADMIN" ? "Demote" : "Promote"}
                     </Button>
                     {!r.deactivatedAt && (
-                      <Button size="sm" variant="ghost" onClick={() => void deactivateUserAction({ userId: r.id })} data-testid={`deactivate-${r.id}`}>Deactivate</Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => void deactivateUserAction({ userId: r.id })}
+                        data-testid={`deactivate-${r.id}`}
+                      >
+                        Deactivate
+                      </Button>
                     )}
                   </div>
                 </td>
@@ -5384,7 +6338,13 @@ export function UsersTable({ rows }: { rows: Row[] }) {
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5398,9 +6358,13 @@ export function NewUserDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button data-testid="new-user-button">New user</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button data-testid="new-user-button">New user</Button>
+      </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Create user</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Create user</DialogTitle>
+        </DialogHeader>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -5408,30 +6372,69 @@ export function NewUserDialog() {
             startTransition(async () => {
               setError(null);
               const res = await createUserAction({
-                email: fd.get("email"), name: fd.get("name"),
+                email: fd.get("email"),
+                name: fd.get("name"),
                 initialPassword: fd.get("initialPassword"),
-                role: fd.get("role"), timezone: fd.get("timezone"),
+                role: fd.get("role"),
+                timezone: fd.get("timezone"),
               });
-              if (!("ok" in res) || !res.ok) { setError(res.message); return; }
+              if (!("ok" in res) || !res.ok) {
+                setError(res.message);
+                return;
+              }
               setOpen(false);
               router.refresh();
             });
           }}
           className="flex flex-col gap-3"
         >
-          <div><Label>Name</Label><Input name="name" required data-testid="new-user-name" /></div>
-          <div><Label>Email</Label><Input name="email" type="email" required data-testid="new-user-email" /></div>
-          <div><Label>Initial password (min 12)</Label><Input name="initialPassword" type="text" required minLength={12} data-testid="new-user-password" /></div>
+          <div>
+            <Label>Name</Label>
+            <Input name="name" required data-testid="new-user-name" />
+          </div>
+          <div>
+            <Label>Email</Label>
+            <Input name="email" type="email" required data-testid="new-user-email" />
+          </div>
+          <div>
+            <Label>Initial password (min 12)</Label>
+            <Input
+              name="initialPassword"
+              type="text"
+              required
+              minLength={12}
+              data-testid="new-user-password"
+            />
+          </div>
           <div>
             <Label>Role</Label>
-            <select name="role" defaultValue="EMPLOYEE" className="w-full rounded border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1 text-sm" data-testid="new-user-role">
+            <select
+              name="role"
+              defaultValue="EMPLOYEE"
+              className="w-full rounded border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1 text-sm"
+              data-testid="new-user-role"
+            >
               <option value="EMPLOYEE">Employee</option>
               <option value="ADMIN">Admin</option>
             </select>
           </div>
-          <div><Label>Timezone</Label><Input name="timezone" defaultValue="America/Chicago" required data-testid="new-user-tz" /></div>
-          {error && <p data-testid="new-user-error" className="text-sm text-[var(--danger)]">{error}</p>}
-          <Button type="submit" disabled={pending} data-testid="new-user-submit">{pending ? "Creatingâ€¦" : "Create"}</Button>
+          <div>
+            <Label>Timezone</Label>
+            <Input
+              name="timezone"
+              defaultValue="America/Chicago"
+              required
+              data-testid="new-user-tz"
+            />
+          </div>
+          {error && (
+            <p data-testid="new-user-error" className="text-sm text-[var(--danger)]">
+              {error}
+            </p>
+          )}
+          <Button type="submit" disabled={pending} data-testid="new-user-submit">
+            {pending ? "Creatingâ€¦" : "Create"}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>
@@ -5451,7 +6454,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { resetPasswordAction } from "../admin-actions";
 
-export function ResetPasswordDialog({ row, onClose }: { row: { id: string; name: string } | null; onClose: () => void }) {
+export function ResetPasswordDialog({
+  row,
+  onClose,
+}: {
+  row: { id: string; name: string } | null;
+  onClose: () => void;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -5459,24 +6468,47 @@ export function ResetPasswordDialog({ row, onClose }: { row: { id: string; name:
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Reset password â€” {row.name}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Reset password â€” {row.name}</DialogTitle>
+        </DialogHeader>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
             startTransition(async () => {
               setError(null);
-              const res = await resetPasswordAction({ userId: row.id, newPassword: fd.get("newPassword") });
-              if (!("ok" in res) || !res.ok) { setError(res.message); return; }
+              const res = await resetPasswordAction({
+                userId: row.id,
+                newPassword: fd.get("newPassword"),
+              });
+              if (!("ok" in res) || !res.ok) {
+                setError(res.message);
+                return;
+              }
               onClose();
               router.refresh();
             });
           }}
           className="flex flex-col gap-3"
         >
-          <div><Label>New password</Label><Input name="newPassword" type="text" required minLength={12} data-testid="reset-input" /></div>
-          {error && <p data-testid="reset-error" className="text-sm text-[var(--danger)]">{error}</p>}
-          <Button type="submit" disabled={pending} data-testid="reset-submit">{pending ? "Savingâ€¦" : "Reset"}</Button>
+          <div>
+            <Label>New password</Label>
+            <Input
+              name="newPassword"
+              type="text"
+              required
+              minLength={12}
+              data-testid="reset-input"
+            />
+          </div>
+          {error && (
+            <p data-testid="reset-error" className="text-sm text-[var(--danger)]">
+              {error}
+            </p>
+          )}
+          <Button type="submit" disabled={pending} data-testid="reset-submit">
+            {pending ? "Savingâ€¦" : "Reset"}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>
@@ -5494,6 +6526,7 @@ git commit -m "feat(admin): /admin/users page with create/reset/role/deactivate"
 ### Task 8.4: `/admin/audit` page
 
 **Files:**
+
 - Create: `src/app/(app)/admin/audit/page.tsx`
 - Create: `src/features/audit/components/audit-table.tsx`
 
@@ -5506,7 +6539,11 @@ import { AuditTable } from "@/features/audit/components/audit-table";
 
 export const dynamic = "force-dynamic";
 
-export default async function AuditPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+export default async function AuditPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   await requireAdmin();
   const sp = await searchParams;
   const actor = sp.actor;
@@ -5563,19 +6600,42 @@ type Row = {
 
 export function AuditTable({ rows }: { rows: Row[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  if (rows.length === 0) return <p className="text-sm text-[var(--text-dim)]" data-testid="audit-empty">No audit entries match.</p>;
+  if (rows.length === 0)
+    return (
+      <p className="text-sm text-[var(--text-dim)]" data-testid="audit-empty">
+        No audit entries match.
+      </p>
+    );
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--border)]" data-testid="audit-table">
+    <div
+      className="overflow-x-auto rounded-xl border border-[var(--border)]"
+      data-testid="audit-table"
+    >
       <table className="min-w-full divide-y divide-[var(--border)] text-sm">
         <thead className="bg-[var(--bg-elev)] text-left text-xs uppercase tracking-wider text-[var(--text-dim)]">
-          <tr><th className="px-4 py-2">When</th><th className="px-4 py-2">Actor</th><th className="px-4 py-2">Action</th><th className="px-4 py-2">Target</th><th className="px-4 py-2">Reason</th></tr>
+          <tr>
+            <th className="px-4 py-2">When</th>
+            <th className="px-4 py-2">Actor</th>
+            <th className="px-4 py-2">Action</th>
+            <th className="px-4 py-2">Target</th>
+            <th className="px-4 py-2">Reason</th>
+          </tr>
         </thead>
         <tbody className="divide-y divide-[var(--border)]">
           {rows.map((r) => (
             <>
-              <tr key={r.id} className="cursor-pointer hover:bg-[var(--bg-elev-2)]" onClick={() => setExpanded(expanded === r.id ? null : r.id)} data-testid={`audit-row-${r.id}`}>
-                <td className="px-4 py-3 font-mono text-xs">{r.at.replace("T", " ").slice(0, 19)}Z</td>
-                <td className="px-4 py-3">{r.actor.name} <span className="text-[var(--text-dim)]">({r.actor.email})</span></td>
+              <tr
+                key={r.id}
+                className="cursor-pointer hover:bg-[var(--bg-elev-2)]"
+                onClick={() => setExpanded(expanded === r.id ? null : r.id)}
+                data-testid={`audit-row-${r.id}`}
+              >
+                <td className="px-4 py-3 font-mono text-xs">
+                  {r.at.replace("T", " ").slice(0, 19)}Z
+                </td>
+                <td className="px-4 py-3">
+                  {r.actor.name} <span className="text-[var(--text-dim)]">({r.actor.email})</span>
+                </td>
                 <td className="px-4 py-3 font-mono">{r.action}</td>
                 <td className="px-4 py-3 font-mono text-xs">{r.targetSessionId ?? "â€”"}</td>
                 <td className="px-4 py-3">{r.reason ?? ""}</td>
@@ -5584,8 +6644,18 @@ export function AuditTable({ rows }: { rows: Row[] }) {
                 <tr key={`${r.id}-expand`}>
                   <td colSpan={5} className="bg-[var(--bg-elev-2)] px-4 py-3">
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div><h3 className="text-xs uppercase text-[var(--text-dim)]">Before</h3><pre className="overflow-x-auto rounded bg-[var(--bg)] p-3 text-xs">{JSON.stringify(r.before, null, 2)}</pre></div>
-                      <div><h3 className="text-xs uppercase text-[var(--text-dim)]">After</h3><pre className="overflow-x-auto rounded bg-[var(--bg)] p-3 text-xs">{JSON.stringify(r.after, null, 2)}</pre></div>
+                      <div>
+                        <h3 className="text-xs uppercase text-[var(--text-dim)]">Before</h3>
+                        <pre className="overflow-x-auto rounded bg-[var(--bg)] p-3 text-xs">
+                          {JSON.stringify(r.before, null, 2)}
+                        </pre>
+                      </div>
+                      <div>
+                        <h3 className="text-xs uppercase text-[var(--text-dim)]">After</h3>
+                        <pre className="overflow-x-auto rounded bg-[var(--bg)] p-3 text-xs">
+                          {JSON.stringify(r.after, null, 2)}
+                        </pre>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -5609,6 +6679,7 @@ git commit -m "feat(admin): /admin/audit page with before/after expand"
 ### Task 8.5: RBAC sweep integration test
 
 **Files:**
+
 - Create: `tests/integration/auth/rbac.test.ts`
 
 - [ ] **Step 1: Write the test**
@@ -5616,7 +6687,12 @@ git commit -m "feat(admin): /admin/audit page with before/after expand"
 ```ts
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { setupTestDb, type TestDb } from "../helpers/db";
-import { createUser, resetPassword, deactivateUser, changeRole } from "@/features/users/admin-service";
+import {
+  createUser,
+  resetPassword,
+  deactivateUser,
+  changeRole,
+} from "@/features/users/admin-service";
 import { adminEditSession, adminDeleteSession } from "@/features/attendance/service";
 import { FakeClock } from "@/lib/time";
 import { hash } from "@node-rs/argon2";
@@ -5627,8 +6703,12 @@ import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T13:00:00Z"));
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.auditLog.deleteMany();
   await db.prisma.timeSession.deleteMany();
@@ -5637,16 +6717,44 @@ beforeEach(async () => {
 
 describe("admin services produce audit rows attributed to the actor", () => {
   it("createUser audit references admin actor", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    await createUser({ prisma: db.prisma, clock }, admin.id, { email: "n@x.com", name: "N", initialPassword: "password1234aa", role: "EMPLOYEE", timezone: "America/Chicago" });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    await createUser({ prisma: db.prisma, clock }, admin.id, {
+      email: "n@x.com",
+      name: "N",
+      initialPassword: "password1234aa",
+      role: "EMPLOYEE",
+      timezone: "America/Chicago",
+    });
     const audit = await db.prisma.auditLog.findFirst({ where: { action: "CREATE_USER" } });
     expect(audit?.actorUserId).toBe(admin.id);
   });
 
   it("adminDeleteSession audit references admin actor", async () => {
-    const admin = await db.prisma.user.create({ data: { email: "a@x.com", name: "A", role: "ADMIN", passwordHash: await hash("password1234aa") } });
-    const emp = await db.prisma.user.create({ data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") } });
-    const s = await db.prisma.timeSession.create({ data: { userId: emp.id, clockInAt: new Date("2026-05-10T08:00:00Z"), clockOutAt: new Date("2026-05-10T12:00:00Z") } });
+    const admin = await db.prisma.user.create({
+      data: {
+        email: "a@x.com",
+        name: "A",
+        role: "ADMIN",
+        passwordHash: await hash("password1234aa"),
+      },
+    });
+    const emp = await db.prisma.user.create({
+      data: { email: "e@x.com", name: "E", passwordHash: await hash("password1234aa") },
+    });
+    const s = await db.prisma.timeSession.create({
+      data: {
+        userId: emp.id,
+        clockInAt: new Date("2026-05-10T08:00:00Z"),
+        clockOutAt: new Date("2026-05-10T12:00:00Z"),
+      },
+    });
     await adminDeleteSession({ prisma: db.prisma, clock }, admin.id, s.id, "test");
     const audit = await db.prisma.auditLog.findFirst({ where: { action: "DELETE_SESSION" } });
     expect(audit?.actorUserId).toBe(admin.id);
@@ -5670,6 +6778,7 @@ git commit -m "test: admin services attribute audit to actor"
 ### Task 8.6: E2E â€” full account lifecycle
 
 **Files:**
+
 - Create: `tests/e2e/admin/lifecycle.spec.ts`
 
 - [ ] **Step 1: Write**
@@ -5680,7 +6789,10 @@ import { PrismaClient } from "@prisma/client";
 
 test.use({ storageState: "tests/e2e/storage/admin.json" });
 
-test("admin creates user, user logs in, gets forced to change password", async ({ page, browser }) => {
+test("admin creates user, user logs in, gets forced to change password", async ({
+  page,
+  browser,
+}) => {
   const prisma = new PrismaClient();
   await prisma.user.deleteMany({ where: { email: "newhire@e2e.test" } });
   await prisma.$disconnect();
@@ -5724,7 +6836,6 @@ git commit -m "test: e2e account lifecycle (create â†’ login â†’ force
 
 ---
 
-
 ## Milestone 9 â€” Cron + Email
 
 End state: a separate `cron` container fires `POST /api/cron/watchdog` every 15 min and `POST /api/cron/weekly-digest` every 15 min on Monday between 06:00â€“15:00 UTC. Both endpoints require a `x-cron-secret` header. Watchdog warns at 12h, auto-closes at 18h (deterministic close time), and emits both employee + admin notifications. Weekly digest is idempotent per `(userId, isoWeek)`. Resend is the default transport; SMTP is wired and selectable via `EMAIL_TRANSPORT`.
@@ -5732,6 +6843,7 @@ End state: a separate `cron` container fires `POST /api/cron/watchdog` every 15 
 ### Task 9.1: Email transport wrapper
 
 **Files:**
+
 - Create: `src/lib/email.ts`
 - Create: `tests/unit/lib/email.test.ts`
 
@@ -5786,16 +6898,20 @@ export function getDefaultTransport(): EmailTransport {
     const resend = new Resend(env.RESEND_API_KEY!);
     cached = {
       kind: "resend",
-      send: async (msg) => resend.emails.send({ from: msg.from, to: [msg.to], subject: msg.subject, html: msg.html }),
+      send: async (msg) =>
+        resend.emails.send({ from: msg.from, to: [msg.to], subject: msg.subject, html: msg.html }),
     };
   } else {
     const tx: Transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST!, port: env.SMTP_PORT!, secure: env.SMTP_PORT === 465,
+      host: env.SMTP_HOST!,
+      port: env.SMTP_PORT!,
+      secure: env.SMTP_PORT === 465,
       auth: { user: env.SMTP_USER!, pass: env.SMTP_PASS! },
     });
     cached = {
       kind: "smtp",
-      send: async (msg) => tx.sendMail({ from: msg.from, to: msg.to, subject: msg.subject, html: msg.html }),
+      send: async (msg) =>
+        tx.sendMail({ from: msg.from, to: msg.to, subject: msg.subject, html: msg.html }),
     };
   }
   return cached!;
@@ -5805,7 +6921,10 @@ export async function sendEmail(transport: EmailTransport, msg: EmailMessage): P
   try {
     await transport.send({ ...msg, from: env.EMAIL_FROM });
   } catch (err) {
-    logger.error({ component: "email", to: msg.to, err: (err as Error).message }, "email_send_failed");
+    logger.error(
+      { component: "email", to: msg.to, err: (err as Error).message },
+      "email_send_failed",
+    );
     throw err;
   }
 }
@@ -5827,6 +6946,7 @@ git commit -m "feat: email transport wrapper (Resend + SMTP)"
 ### Task 9.2: Cron secret middleware helper
 
 **Files:**
+
 - Create: `src/lib/cron.ts`
 
 - [ ] **Step 1: Write `src/lib/cron.ts`**
@@ -5851,6 +6971,7 @@ git commit -m "feat: cron secret verifier"
 ### Task 9.3: Watchdog service (warn + close passes)
 
 **Files:**
+
 - Create: `src/features/cron/watchdog-service.ts`
 - Create: `tests/integration/cron/watchdog.test.ts`
 
@@ -5868,38 +6989,79 @@ import { hash } from "@node-rs/argon2";
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-12T00:00:00Z"));
 
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.auditLog.deleteMany();
   await db.prisma.timeSession.deleteMany();
   await db.prisma.user.deleteMany({ where: { id: { not: "system" } } });
   await db.prisma.user.upsert({
-    where: { id: "system" }, update: {},
-    create: { id: "system", email: "system@punchpad.internal", name: "System", passwordHash: "!disabled", role: "ADMIN", deactivatedAt: new Date() },
+    where: { id: "system" },
+    update: {},
+    create: {
+      id: "system",
+      email: "system@punchpad.internal",
+      name: "System",
+      passwordHash: "!disabled",
+      role: "ADMIN",
+      deactivatedAt: new Date(),
+    },
   });
   clock.setNow(new Date("2026-05-12T00:00:00Z"));
 });
 
 describe("watchdog", () => {
   it("warns at 12h+ and is idempotent", async () => {
-    const u = await db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") } });
-    await db.prisma.timeSession.create({ data: { userId: u.id, clockInAt: new Date("2026-05-11T11:00:00Z") } });
+    const u = await db.prisma.user.create({
+      data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") },
+    });
+    await db.prisma.timeSession.create({
+      data: { userId: u.id, clockInAt: new Date("2026-05-11T11:00:00Z") },
+    });
     clock.setNow(new Date("2026-05-12T00:00:00Z")); // 13h in
     const send = vi.fn();
-    const r1 = await runWatchdog({ prisma: db.prisma, clock, warnHours: 12, closeHours: 18, notify: send, systemUserId: "system" });
+    const r1 = await runWatchdog({
+      prisma: db.prisma,
+      clock,
+      warnHours: 12,
+      closeHours: 18,
+      notify: send,
+      systemUserId: "system",
+    });
     expect(r1.warned).toBe(1);
     expect(r1.closed).toBe(0);
-    const r2 = await runWatchdog({ prisma: db.prisma, clock, warnHours: 12, closeHours: 18, notify: send, systemUserId: "system" });
+    const r2 = await runWatchdog({
+      prisma: db.prisma,
+      clock,
+      warnHours: 12,
+      closeHours: 18,
+      notify: send,
+      systemUserId: "system",
+    });
     expect(r2.warned).toBe(0); // idempotent
   });
 
   it("auto-closes at 18h+ at clockInAt + 18h and writes AUTO_CLOSE audit attributed to system", async () => {
-    const u = await db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") } });
-    await db.prisma.timeSession.create({ data: { userId: u.id, clockInAt: new Date("2026-05-11T05:00:00Z") } });
+    const u = await db.prisma.user.create({
+      data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa") },
+    });
+    await db.prisma.timeSession.create({
+      data: { userId: u.id, clockInAt: new Date("2026-05-11T05:00:00Z") },
+    });
     clock.setNow(new Date("2026-05-12T00:00:00Z")); // 19h in
     const send = vi.fn();
-    const r = await runWatchdog({ prisma: db.prisma, clock, warnHours: 12, closeHours: 18, notify: send, systemUserId: "system" });
+    const r = await runWatchdog({
+      prisma: db.prisma,
+      clock,
+      warnHours: 12,
+      closeHours: 18,
+      notify: send,
+      systemUserId: "system",
+    });
     expect(r.closed).toBe(1);
     const fresh = await db.prisma.timeSession.findFirstOrThrow({ where: { userId: u.id } });
     expect(fresh.clockOutAt?.toISOString()).toBe("2026-05-11T23:00:00.000Z");
@@ -5930,7 +7092,10 @@ export type WatchdogDeps = {
   warnHours: number;
   closeHours: number;
   systemUserId: string;
-  notify: (kind: "warn" | "auto_close" | "admin_auto_close", payload: Record<string, unknown>) => void | Promise<void>;
+  notify: (
+    kind: "warn" | "auto_close" | "admin_auto_close",
+    payload: Record<string, unknown>,
+  ) => void | Promise<void>;
 };
 
 export async function runWatchdog(d: WatchdogDeps): Promise<{ warned: number; closed: number }> {
@@ -5945,7 +7110,12 @@ export async function runWatchdog(d: WatchdogDeps): Promise<{ warned: number; cl
   });
   for (const s of toWarn) {
     await d.prisma.timeSession.update({ where: { id: s.id }, data: { warnedAt: now } });
-    await d.notify("warn", { userId: s.userId, email: s.user.email, sessionId: s.id, clockInAt: s.clockInAt.toISOString() });
+    await d.notify("warn", {
+      userId: s.userId,
+      email: s.user.email,
+      sessionId: s.id,
+      clockInAt: s.clockInAt.toISOString(),
+    });
     logger.info({ component: "watchdog", sessionId: s.id }, "watchdog_warned");
   }
 
@@ -5958,17 +7128,39 @@ export async function runWatchdog(d: WatchdogDeps): Promise<{ warned: number; cl
     const closeAt = new Date(s.clockInAt.getTime() + d.closeHours * 3_600_000);
     const before = snapshot(s);
     const updated = await d.prisma.timeSession.update({
-      where: { id: s.id }, data: { clockOutAt: closeAt, autoClosed: true },
+      where: { id: s.id },
+      data: { clockOutAt: closeAt, autoClosed: true },
     });
     const after = snapshot(updated);
     await d.prisma.auditLog.create({
-      data: { actorUserId: d.systemUserId, targetSessionId: s.id, action: "AUTO_CLOSE", before, after, reason: "Exceeded watchdog threshold" },
+      data: {
+        actorUserId: d.systemUserId,
+        targetSessionId: s.id,
+        action: "AUTO_CLOSE",
+        before,
+        after,
+        reason: "Exceeded watchdog threshold",
+      },
     });
-    await d.notify("auto_close", { userId: s.userId, email: s.user.email, sessionId: s.id, closeAt: closeAt.toISOString() });
+    await d.notify("auto_close", {
+      userId: s.userId,
+      email: s.user.email,
+      sessionId: s.id,
+      closeAt: closeAt.toISOString(),
+    });
 
-    const admins = await d.prisma.user.findMany({ where: { role: "ADMIN", deactivatedAt: null, id: { not: "system" } }, select: { id: true, email: true } });
+    const admins = await d.prisma.user.findMany({
+      where: { role: "ADMIN", deactivatedAt: null, id: { not: "system" } },
+      select: { id: true, email: true },
+    });
     for (const a of admins) {
-      await d.notify("admin_auto_close", { adminId: a.id, adminEmail: a.email, subjectUserId: s.userId, subjectEmail: s.user.email, sessionId: s.id });
+      await d.notify("admin_auto_close", {
+        adminId: a.id,
+        adminEmail: a.email,
+        subjectUserId: s.userId,
+        subjectEmail: s.user.email,
+        sessionId: s.id,
+      });
     }
     logger.info({ component: "watchdog", sessionId: s.id }, "watchdog_auto_closed");
   }
@@ -5993,6 +7185,7 @@ git commit -m "feat(cron): watchdog (warn + auto-close) service"
 ### Task 9.4: `/api/cron/watchdog` route
 
 **Files:**
+
 - Create: `src/app/api/cron/watchdog/route.ts`
 - Create: `src/features/cron/notify.ts`
 
@@ -6075,6 +7268,7 @@ git commit -m "feat(cron): /api/cron/watchdog route with email notifications"
 ### Task 9.5: Weekly digest service + idempotency
 
 **Files:**
+
 - Create: `src/features/cron/digest-service.ts`
 - Create: `tests/integration/cron/digest.test.ts`
 
@@ -6091,8 +7285,12 @@ import { hash } from "@node-rs/argon2";
 
 let db: TestDb;
 const clock = new FakeClock(new Date("2026-05-11T12:00:00Z")); // a Monday 07:00 in America/Chicago
-beforeAll(async () => { db = await setupTestDb(); }, 120_000);
-afterAll(async () => { await db.stop(); });
+beforeAll(async () => {
+  db = await setupTestDb();
+}, 120_000);
+afterAll(async () => {
+  await db.stop();
+});
 beforeEach(async () => {
   await db.prisma.digestSend.deleteMany();
   await db.prisma.timeSession.deleteMany();
@@ -6101,11 +7299,26 @@ beforeEach(async () => {
 
 describe("weekly digest", () => {
   it("sends to employees in their local 07:00 window and is idempotent on second call", async () => {
-    const u = await db.prisma.user.create({ data: { email: "u@x.com", name: "U", passwordHash: await hash("password1234aa"), timezone: "America/Chicago" } });
+    const u = await db.prisma.user.create({
+      data: {
+        email: "u@x.com",
+        name: "U",
+        passwordHash: await hash("password1234aa"),
+        timezone: "America/Chicago",
+      },
+    });
     await db.prisma.timeSession.createMany({
       data: [
-        { userId: u.id, clockInAt: new Date("2026-05-04T13:00:00Z"), clockOutAt: new Date("2026-05-04T22:00:00Z") },
-        { userId: u.id, clockInAt: new Date("2026-05-05T13:00:00Z"), clockOutAt: new Date("2026-05-05T21:00:00Z") },
+        {
+          userId: u.id,
+          clockInAt: new Date("2026-05-04T13:00:00Z"),
+          clockOutAt: new Date("2026-05-04T22:00:00Z"),
+        },
+        {
+          userId: u.id,
+          clockInAt: new Date("2026-05-05T13:00:00Z"),
+          clockOutAt: new Date("2026-05-05T21:00:00Z"),
+        },
       ],
     });
     const send = vi.fn();
@@ -6128,7 +7341,13 @@ pnpm test:int
 ```ts
 import type { PrismaClient, User } from "@prisma/client";
 import type { Clock } from "@/lib/time";
-import { formatLocal, isoWeekKey, durationMinutes, startOfWeekInTz, endOfWeekInTz } from "@/lib/time";
+import {
+  formatLocal,
+  isoWeekKey,
+  durationMinutes,
+  startOfWeekInTz,
+  endOfWeekInTz,
+} from "@/lib/time";
 
 export type DigestDeps = {
   prisma: PrismaClient;
@@ -6139,7 +7358,9 @@ export type DigestDeps = {
 
 export async function runWeeklyDigest(d: DigestDeps): Promise<{ sent: number }> {
   const now = d.clock.now();
-  const users = await d.prisma.user.findMany({ where: { deactivatedAt: null, id: { not: "system" } } });
+  const users = await d.prisma.user.findMany({
+    where: { deactivatedAt: null, id: { not: "system" } },
+  });
   let sent = 0;
 
   for (const user of users) {
@@ -6148,7 +7369,9 @@ export async function runWeeklyDigest(d: DigestDeps): Promise<{ sent: number }> 
     if (localWeekday !== "Monday") continue;
     if (localHour !== d.sendHourLocal) continue;
     const wk = isoWeekKey(now, user.timezone);
-    const already = await d.prisma.digestSend.findUnique({ where: { userId_isoWeek: { userId: user.id, isoWeek: wk } } });
+    const already = await d.prisma.digestSend.findUnique({
+      where: { userId_isoWeek: { userId: user.id, isoWeek: wk } },
+    });
     if (already) continue;
 
     const lastMonday = new Date(startOfWeekInTz(now, user.timezone).getTime() - 7 * 24 * 3_600_000);
@@ -6157,10 +7380,17 @@ export async function runWeeklyDigest(d: DigestDeps): Promise<{ sent: number }> 
       where: { userId: user.id, deletedAt: null, clockInAt: { gte: lastMonday, lte: lastSunday } },
       orderBy: { clockInAt: "asc" },
     });
-    const total = sessions.reduce((m, s) => m + durationMinutes(s.clockInAt, s.clockOutAt ?? now), 0);
+    const total = sessions.reduce(
+      (m, s) => m + durationMinutes(s.clockInAt, s.clockOutAt ?? now),
+      0,
+    );
     const html = renderDigestEmail(user, sessions, total, lastMonday, lastSunday);
 
-    await d.send({ to: user.email, subject: `PunchPad â€” last week (${formatLocal(lastMonday, user.timezone, "MMM d")}â€“${formatLocal(lastSunday, user.timezone, "MMM d")})`, html });
+    await d.send({
+      to: user.email,
+      subject: `PunchPad â€” last week (${formatLocal(lastMonday, user.timezone, "MMM d")}â€“${formatLocal(lastSunday, user.timezone, "MMM d")})`,
+      html,
+    });
     await d.prisma.digestSend.create({ data: { userId: user.id, isoWeek: wk } });
     sent += 1;
   }
@@ -6175,15 +7405,18 @@ function renderDigestEmail(
   from: Date,
   to: Date,
 ): string {
-  const totalH = Math.floor(totalMinutes / 60), totalM = totalMinutes % 60;
-  const rows = sessions.map((s) => {
-    const dur = durationMinutes(s.clockInAt, s.clockOutAt ?? to);
-    const d = formatLocal(s.clockInAt, user.timezone, "EEE MMM d");
-    const i = formatLocal(s.clockInAt, user.timezone, "h:mma");
-    const o = s.clockOutAt ? formatLocal(s.clockOutAt, user.timezone, "h:mma") : "â€”";
-    const flag = s.autoClosed ? " (auto-closed)" : "";
-    return `<tr><td style="padding:6px 12px">${d}</td><td style="padding:6px 12px;font-family:monospace">${i} â†’ ${o}${flag}</td><td style="padding:6px 12px;font-family:monospace">${Math.floor(dur / 60)}h ${dur % 60}m</td></tr>`;
-  }).join("");
+  const totalH = Math.floor(totalMinutes / 60),
+    totalM = totalMinutes % 60;
+  const rows = sessions
+    .map((s) => {
+      const dur = durationMinutes(s.clockInAt, s.clockOutAt ?? to);
+      const d = formatLocal(s.clockInAt, user.timezone, "EEE MMM d");
+      const i = formatLocal(s.clockInAt, user.timezone, "h:mma");
+      const o = s.clockOutAt ? formatLocal(s.clockOutAt, user.timezone, "h:mma") : "â€”";
+      const flag = s.autoClosed ? " (auto-closed)" : "";
+      return `<tr><td style="padding:6px 12px">${d}</td><td style="padding:6px 12px;font-family:monospace">${i} â†’ ${o}${flag}</td><td style="padding:6px 12px;font-family:monospace">${Math.floor(dur / 60)}h ${dur % 60}m</td></tr>`;
+    })
+    .join("");
   return `
     <div style="font-family:Inter,system-ui,sans-serif;color:#0f172a;max-width:560px">
       <h1 style="font-size:18px">Hi ${user.name},</h1>
@@ -6211,6 +7444,7 @@ git commit -m "feat(cron): weekly digest service with idempotency"
 ### Task 9.6: `/api/cron/weekly-digest` route
 
 **Files:**
+
 - Create: `src/app/api/cron/weekly-digest/route.ts`
 
 - [ ] **Step 1: Write the route**
@@ -6256,6 +7490,7 @@ git commit -m "feat(cron): /api/cron/weekly-digest route"
 ### Task 9.7: E2E â€” watchdog produces an auto-close via direct POST
 
 **Files:**
+
 - Create: `tests/e2e/cron/watchdog.spec.ts`
 
 - [ ] **Step 1: Write**
@@ -6302,7 +7537,6 @@ git commit -m "test: e2e watchdog auto-close via direct POST"
 
 ---
 
-
 ## Milestone 10 â€” Deployment
 
 End state: `docker compose up -d` on a fresh VM brings up `web`, `postgres`, `cron`, and `caddy`. Migrations run automatically on `web` boot. Caddy terminates TLS and proxies to `web` (health-checked). Cron fires watchdog every 15 min and weekly digest on the Monday window. A nightly `pg_dump` produces a gzipped backup in `./backups/`. A short runbook in `RUNBOOK.md` documents update / rollback / restore.
@@ -6310,6 +7544,7 @@ End state: `docker compose up -d` on a fresh VM brings up `web`, `postgres`, `cr
 ### Task 10.1: `/api/health` endpoint
 
 **Files:**
+
 - Create: `src/app/api/health/route.ts`
 
 - [ ] **Step 1: Write the route**
@@ -6325,7 +7560,9 @@ export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
     dbOk = true;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return NextResponse.json(
     { ok: dbOk, db: dbOk ? "up" : "down", commit: process.env.GIT_COMMIT ?? "unknown" },
     { status: dbOk ? 200 : 503 },
@@ -6343,6 +7580,7 @@ git commit -m "feat: /api/health endpoint"
 ### Task 10.2: Multi-stage Dockerfile (Next.js standalone)
 
 **Files:**
+
 - Create: `Dockerfile`
 - Create: `docker/entrypoint.sh`
 - Modify: `next.config.ts` (add `output: "standalone"`)
@@ -6423,6 +7661,7 @@ git commit -m "feat: production Dockerfile with standalone output and migrate-on
 ### Task 10.3: `docker-compose.yml` (web + postgres + cron + caddy)
 
 **Files:**
+
 - Create: `docker-compose.yml`
 - Create: `cron/Dockerfile`
 - Create: `cron/crontab`
@@ -6560,6 +7799,7 @@ git commit -m "feat: docker compose (web + postgres + cron + caddy)"
 ### Task 10.4: Backup script
 
 **Files:**
+
 - Create: `scripts/backup.sh`
 
 - [ ] **Step 1: Write `scripts/backup.sh`**
@@ -6589,6 +7829,7 @@ git commit -m "feat: nightly pg_dump backup script (14-day retention)"
 ### Task 10.5: CI workflow
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`
 
 - [ ] **Step 1: Write `.github/workflows/ci.yml`**
@@ -6652,6 +7893,7 @@ git commit -m "ci: lint, typecheck, unit, integration, e2e"
 ### Task 10.6: `RUNBOOK.md`
 
 **Files:**
+
 - Create: `RUNBOOK.md`
 
 - [ ] **Step 1: Write `RUNBOOK.md`**
@@ -6666,7 +7908,7 @@ git commit -m "ci: lint, typecheck, unit, integration, e2e"
 3. Copy `.env.example` to `.env` and fill in:
    - `POSTGRES_PASSWORD`, `NEXTAUTH_SECRET`, `CRON_SECRET` â€” generate fresh 32-byte values (`openssl rand -base64 32`).
    - `ADMIN_EMAIL`, `ADMIN_INITIAL_PASSWORD`, `NEXTAUTH_URL`, `PUNCHPAD_DOMAIN`, `ACME_EMAIL`.
-   - `EMAIL_TRANSPORT` + corresponding keys (`RESEND_API_KEY` *or* `SMTP_*`).
+   - `EMAIL_TRANSPORT` + corresponding keys (`RESEND_API_KEY` _or_ `SMTP_*`).
 4. Point DNS `${PUNCHPAD_DOMAIN}` at the VM.
 5. `docker compose up -d`. First boot pulls images, builds `web`, runs migrations, seeds the system user and initial admin.
 6. Visit `https://${PUNCHPAD_DOMAIN}`. Log in as `${ADMIN_EMAIL}` with `${ADMIN_INITIAL_PASSWORD}`; you'll be forced to change the password.
@@ -6783,6 +8025,7 @@ git tag -a v1.0.0-phase1 -m "PunchPad Phase 1 MVP"
 ## Self-review checklist (done by the plan author before handing off)
 
 Spec coverage (Section â†’ covered by):
+
 - Â§1 Overview & Phase 1 goals â†’ Milestones 4â€“9 cover all six goals; Phase 1 non-goals are not implemented.
 - Â§2 Architecture / stack â†’ Milestone 0 + 1 + 10.
 - Â§3 Data model (User, TimeSession, AuditLog, LoginAttempt, DigestSend, partial-unique index, system user) â†’ Milestone 2.
@@ -6811,4 +8054,3 @@ Plan complete and saved to `docs/superpowers/plans/2026-05-12-punchpad-phase1-pl
 **2. Inline Execution** â€” Execute tasks in this session using `superpowers:executing-plans`, batch execution with checkpoints.
 
 Which approach?
-

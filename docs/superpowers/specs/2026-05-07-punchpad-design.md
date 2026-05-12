@@ -11,8 +11,8 @@
 
 We're using the `superpowers` brainstorming → planning → implementation flow. Three stages, gated:
 
-1. **Brainstorming → spec** ✅ *complete (this document)*
-2. **Writing the implementation plan** ⬅ *next step* — invoke the `superpowers:writing-plans` skill with this spec as input. Output is a separate plan doc that breaks Phase 1 into ordered, testable steps.
+1. **Brainstorming → spec** ✅ _complete (this document)_
+2. **Writing the implementation plan** ⬅ _next step_ — invoke the `superpowers:writing-plans` skill with this spec as input. Output is a separate plan doc that breaks Phase 1 into ordered, testable steps.
 3. **Executing the plan** — happens in a fresh session; the plan doc drives it.
 
 ### When you come back, paste this prompt to continue:
@@ -71,20 +71,20 @@ CW tracks billable time in serial 15-minute blocks tied to a single active ticke
 
 ### Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js 16 (App Router, TypeScript) |
-| UI | shadcn/ui + Tailwind CSS v4 |
-| ORM / DB | Prisma + PostgreSQL 16 |
-| Auth | NextAuth (Credentials provider, JWT session strategy) |
-| Password hashing | Argon2id (`@node-rs/argon2`) |
-| Email | Resend by default; Nodemailer + SMTP as alternative |
-| Scheduling | Separate `cron` container (supercronic) hitting `/api/cron/*` endpoints with shared secret |
-| Reverse proxy / TLS | Caddy (automatic Let's Encrypt) |
-| Logging | pino, structured JSON to stdout |
-| Validation | Zod for env, server-action inputs, request bodies |
-| Testing | Vitest (unit + integration via Testcontainers Postgres), Playwright (E2E) |
-| Hosting | Single small VM (1 vCPU / 1 GB RAM is sufficient) running Docker Compose |
+| Layer               | Choice                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| Framework           | Next.js 16 (App Router, TypeScript)                                                        |
+| UI                  | shadcn/ui + Tailwind CSS v4                                                                |
+| ORM / DB            | Prisma + PostgreSQL 16                                                                     |
+| Auth                | NextAuth (Credentials provider, JWT session strategy)                                      |
+| Password hashing    | Argon2id (`@node-rs/argon2`)                                                               |
+| Email               | Resend by default; Nodemailer + SMTP as alternative                                        |
+| Scheduling          | Separate `cron` container (supercronic) hitting `/api/cron/*` endpoints with shared secret |
+| Reverse proxy / TLS | Caddy (automatic Let's Encrypt)                                                            |
+| Logging             | pino, structured JSON to stdout                                                            |
+| Validation          | Zod for env, server-action inputs, request bodies                                          |
+| Testing             | Vitest (unit + integration via Testcontainers Postgres), Playwright (E2E)                  |
+| Hosting             | Single small VM (1 vCPU / 1 GB RAM is sufficient) running Docker Compose                   |
 
 ### Project shape
 
@@ -205,7 +205,7 @@ model TimeSession {
      ON "TimeSession" ("userId") WHERE "clockOutAt" IS NULL;
    ```
 
-A session belongs to the calendar date of `clockInAt` *in the user's stored timezone*. Sessions crossing midnight count toward their start date.
+A session belongs to the calendar date of `clockInAt` _in the user's stored timezone_. Sessions crossing midnight count toward their start date.
 
 ### `AuditLog`
 
@@ -309,18 +309,18 @@ Every server action and API route begins with one of these. Middleware also prot
 
 ### Roles
 
-| Capability | Employee | Admin |
-|---|:---:|:---:|
-| Clock in / out | ✓ | ✓ |
-| View own calendar | ✓ | ✓ |
-| Edit own session within last 7 days | ✓ | ✓ |
-| Edit any session, any date | | ✓ |
-| Delete a session (soft) | | ✓ |
-| View all users' calendars | | ✓ |
-| Manage users (create / deactivate / reset password) | | ✓ |
-| View audit log | | ✓ |
-| Export CSV (own data) | ✓ | ✓ |
-| Export CSV (all users) | | ✓ |
+| Capability                                          | Employee | Admin |
+| --------------------------------------------------- | :------: | :---: |
+| Clock in / out                                      |    ✓     |   ✓   |
+| View own calendar                                   |    ✓     |   ✓   |
+| Edit own session within last 7 days                 |    ✓     |   ✓   |
+| Edit any session, any date                          |          |   ✓   |
+| Delete a session (soft)                             |          |   ✓   |
+| View all users' calendars                           |          |   ✓   |
+| Manage users (create / deactivate / reset password) |          |   ✓   |
+| View audit log                                      |          |   ✓   |
+| Export CSV (own data)                               |    ✓     |   ✓   |
+| Export CSV (all users)                              |          |   ✓   |
 
 ---
 
@@ -431,7 +431,7 @@ Per Lexcom global frontend rules:
 
 Single centered card. Email + password + "Sign in". Subtle Lexcom mark. No public signup, no "forgot password" link in Phase 1 (copy: "Ask your admin").
 
-#### `/clock` *(layout A — single hero state)*
+#### `/clock` _(layout A — single hero state)_
 
 The marquee screen. Approved layout:
 
@@ -463,16 +463,16 @@ Month view by default; week view toggle. Each day cell shows total hours as a sm
 
 #### `/reports`
 
-- KPI row: *Today*, *This Week*, *Last Week*, *7-Day Avg* (JetBrains Mono).
+- KPI row: _Today_, _This Week_, _Last Week_, _7-Day Avg_ (JetBrains Mono).
 - Date range picker with presets (this week / last week / pay period / custom).
 - Per-user table with daily breakdown — sortable, sticky header. Employees see themselves only; admins see all users with a user filter.
 - **Export CSV** button → `/api/reports/csv` (streamed).
 
-#### `/admin/users` *(admin only)*
+#### `/admin/users` _(admin only)_
 
-Table: name, email, role, status, last clock-in. Buttons: *New user*, *Edit*, *Reset password*, *Deactivate*. Modal forms.
+Table: name, email, role, status, last clock-in. Buttons: _New user_, _Edit_, _Reset password_, _Deactivate_. Modal forms.
 
-#### `/admin/audit` *(admin only)*
+#### `/admin/audit` _(admin only)_
 
 Reverse-chronological audit log. Filters: actor, action, date range, target user. Each row expands to show before / after JSON. Plain and dense.
 
@@ -498,10 +498,10 @@ Reverse-chronological audit log. Filters: actor, action, date range, target user
 
 ### Cron schedule
 
-| Job | Cadence | Endpoint |
-|---|---|---|
-| Watchdog (warn + auto-close) | every 15 min | `POST /api/cron/watchdog` |
-| Weekly digest | every 15 min on Monday between 06:00–15:00 UTC (covers all U.S. timezones with margin); handler fires only for users whose local time is within `[DIGEST_SEND_HOUR_LOCAL, DIGEST_SEND_HOUR_LOCAL + 15min]`; `DigestSend` idempotency prevents duplicates | `POST /api/cron/weekly-digest` |
+| Job                          | Cadence                                                                                                                                                                                                                                                  | Endpoint                       |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Watchdog (warn + auto-close) | every 15 min                                                                                                                                                                                                                                             | `POST /api/cron/watchdog`      |
+| Weekly digest                | every 15 min on Monday between 06:00–15:00 UTC (covers all U.S. timezones with margin); handler fires only for users whose local time is within `[DIGEST_SEND_HOUR_LOCAL, DIGEST_SEND_HOUR_LOCAL + 15min]`; `DigestSend` idempotency prevents duplicates | `POST /api/cron/weekly-digest` |
 
 ### Email transport
 
@@ -539,19 +539,19 @@ A thin wrapper around server actions and route handlers maps `AppError` → `{ o
 
 ### Edge cases
 
-| Case | Handling |
-|---|---|
-| Double-click "Clock In" or retry storm | Partial unique index rejects; UI catches `ConflictError("ALREADY_CLOCKED_IN")`. |
-| Two devices for the same user | `/clock` server-fetches state on each load; second device sees the open session and shows the "On the clock" view rather than the clock-in button. |
-| Client clock skew | All stored timestamps are server `now()`; live UI counters use `clientNow - serverProvidedClockInAt` so display drift is bounded but truth isn't. |
-| DST transition mid-session | UTC storage + TZ-on-display. A session that crosses spring-forward measures 23 wall-clock hours. Documented explicitly. |
-| Session crosses midnight | Belongs to the calendar date of `clockInAt` *in the user's TZ*. |
-| Edit creates an overlap | Service rejects with `ConflictError`; UI surfaces the conflicting session. |
-| User deactivated mid-session | Can clock out (no orphaned open session). New clock-ins blocked with `ForbiddenError`. |
-| Cron worker down for hours | Watchdog passes are idempotent — next run catches up. `warnedAt` prevents double-warns. |
-| Digest cron fires twice | `DigestSend` unique constraint prevents the second send. |
-| DB briefly unreachable | `ServiceUnavailableError`; UI toast "Couldn't reach the server — try again." No silent retries. |
-| Unauthorized cron call | `401`, no body. Logged with source IP. |
+| Case                                   | Handling                                                                                                                                           |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Double-click "Clock In" or retry storm | Partial unique index rejects; UI catches `ConflictError("ALREADY_CLOCKED_IN")`.                                                                    |
+| Two devices for the same user          | `/clock` server-fetches state on each load; second device sees the open session and shows the "On the clock" view rather than the clock-in button. |
+| Client clock skew                      | All stored timestamps are server `now()`; live UI counters use `clientNow - serverProvidedClockInAt` so display drift is bounded but truth isn't.  |
+| DST transition mid-session             | UTC storage + TZ-on-display. A session that crosses spring-forward measures 23 wall-clock hours. Documented explicitly.                            |
+| Session crosses midnight               | Belongs to the calendar date of `clockInAt` _in the user's TZ_.                                                                                    |
+| Edit creates an overlap                | Service rejects with `ConflictError`; UI surfaces the conflicting session.                                                                         |
+| User deactivated mid-session           | Can clock out (no orphaned open session). New clock-ins blocked with `ForbiddenError`.                                                             |
+| Cron worker down for hours             | Watchdog passes are idempotent — next run catches up. `warnedAt` prevents double-warns.                                                            |
+| Digest cron fires twice                | `DigestSend` unique constraint prevents the second send.                                                                                           |
+| DB briefly unreachable                 | `ServiceUnavailableError`; UI toast "Couldn't reach the server — try again." No silent retries.                                                    |
+| Unauthorized cron call                 | `401`, no body. Logged with source IP.                                                                                                             |
 
 ### Logging
 
@@ -575,6 +575,7 @@ Aligns with global testing rules: ≥ 80% lines/branches; ≥ 95% on critical pa
 ### Layers
 
 **Unit (Vitest)** — pure functions, no I/O. Targets:
+
 - `lib/time.ts` (TZ-aware day/week boundaries, durations).
 - `features/attendance/service.ts` overlap detection, watchdog selection logic, edit validation.
 - `lib/csv.ts` row builder.
@@ -583,16 +584,16 @@ Aligns with global testing rules: ≥ 80% lines/branches; ≥ 95% on critical pa
 
 **E2E (Playwright)** — critical journeys end-to-end:
 
-| Flow | Why E2E |
-|---|---|
-| Login (success + lockout) | Cookie + session shape are real |
-| Clock in → clock out → see session in `/calendar` | Marquee path |
-| Edit a session within 7 days | Validation surfaces correctly |
-| Admin creates user → user logs in → must change password | Account lifecycle |
-| Admin edits another user's session | Role boundary |
-| CSV export downloads correctly | Streaming response works |
-| Auto-close watchdog produces expected record | Hit `/api/cron/watchdog` directly with a fixed test clock |
-| Theme toggle persists + initializes pre-paint | No flash of wrong theme |
+| Flow                                                     | Why E2E                                                   |
+| -------------------------------------------------------- | --------------------------------------------------------- |
+| Login (success + lockout)                                | Cookie + session shape are real                           |
+| Clock in → clock out → see session in `/calendar`        | Marquee path                                              |
+| Edit a session within 7 days                             | Validation surfaces correctly                             |
+| Admin creates user → user logs in → must change password | Account lifecycle                                         |
+| Admin edits another user's session                       | Role boundary                                             |
+| CSV export downloads correctly                           | Streaming response works                                  |
+| Auto-close watchdog produces expected record             | Hit `/api/cron/watchdog` directly with a fixed test clock |
+| Theme toggle persists + initializes pre-paint            | No flash of wrong theme                                   |
 
 Following the governance-inversion-SaaS pattern: globalSetup seeds DB; an `auth.setup` Playwright project injects a NextAuth JWT cookie into `storageState`. Use `data-testid` everywhere — never `getByText` for unique elements (per prior lessons learned).
 
@@ -621,12 +622,12 @@ All must pass before merge. Coverage reported via Vitest c8 and surfaced in PR c
 
 Single small VM (1 vCPU / 1 GB RAM is plenty for 5 users). Docker Compose runs four services:
 
-| Service | Image | Purpose |
-|---|---|---|
-| `web` | local Dockerfile (Next.js standalone) | Application |
-| `postgres` | `postgres:16-alpine` | Database, named volume `pgdata` |
-| `cron` | `alpine` + supercronic | Scheduled HTTP triggers |
-| `caddy` | `caddy:2` | TLS termination + reverse proxy |
+| Service    | Image                                 | Purpose                         |
+| ---------- | ------------------------------------- | ------------------------------- |
+| `web`      | local Dockerfile (Next.js standalone) | Application                     |
+| `postgres` | `postgres:16-alpine`                  | Database, named volume `pgdata` |
+| `cron`     | `alpine` + supercronic                | Scheduled HTTP triggers         |
+| `caddy`    | `caddy:2`                             | TLS termination + reverse proxy |
 
 ### Environment variables
 
@@ -718,4 +719,4 @@ None of these block the implementation plan; they're the kind of small calls we 
 
 ---
 
-*End of design.*
+_End of design._

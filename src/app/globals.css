@@ -127,10 +127,16 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-html, body { background: var(--bg); color: var(--text); }
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
