@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: punchpad-dev-pg
+    environment:
+      POSTGRES_USER: punchpad
+      POSTGRES_PASSWORD: punchpad
+      POSTGRES_DB: punchpad
+    ports:
+      - "5432:5432"
+    volumes:
+      - punchpad_pgdata:/var/lib/postgresql/data
+
+volumes:
+  punchpad_pgdata:
