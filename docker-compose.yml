@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-punchpad}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_DB: ${POSTGRES_DB:-punchpad}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-punchpad}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-punchpad}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-punchpad}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD}
+      CRON_SECRET: ${CRON_SECRET}
+      WATCHDOG_WARN_HOURS: ${WATCHDOG_WARN_HOURS:-12}
+      WATCHDOG_CLOSE_HOURS: ${WATCHDOG_CLOSE_HOURS:-18}
+      EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM}
+      TZ_DEFAULT: ${TZ_DEFAULT:-America/Chicago}
+      DIGEST_SEND_HOUR_LOCAL: ${DIGEST_SEND_HOUR_LOCAL:-7}
+    expose:
+      - "3000"
+
+  cron:
+    build: ./cron
+    restart: unless-stopped
+    depends_on:
+      web: { condition: service_started }
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      web: { condition: service_started }
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      PUNCHPAD_DOMAIN: ${PUNCHPAD_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

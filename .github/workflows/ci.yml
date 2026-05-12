@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: punchpad
+          POSTGRES_PASSWORD: punchpad
+          POSTGRES_DB: punchpad
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U punchpad"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://punchpad:punchpad@localhost:5432/punchpad
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-secret-32-chars-aaaaaaaaaaaaaaaa
+      ADMIN_EMAIL: ci@punchpad.test
+      ADMIN_INITIAL_PASSWORD: ciPassword12345
+      CRON_SECRET: ci-cron-secret-32-chars-aaaaaaaaa
+      EMAIL_TRANSPORT: resend
+      RESEND_API_KEY: re_ci_dummy
+      EMAIL_FROM: "PunchPad <ci@punchpad.test>"
+      TZ_DEFAULT: America/Chicago
+      DIGEST_SEND_HOUR_LOCAL: "7"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      - run: pnpm exec prisma migrate deploy
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+      - run: pnpm test:int
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e

@@ -1,0 +1,4 @@
+# Watchdog every 15 minutes
+*/15 * * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" http://web:3000/api/cron/watchdog || true
+# Weekly digest on Monday between 06:00 and 14:45 UTC, every 15 minutes (handler picks users in their local 07:00)
+0,15,30,45 6-14 * * 1 curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" http://web:3000/api/cron/weekly-digest || true
