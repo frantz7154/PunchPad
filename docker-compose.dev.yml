@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: punchpad
       POSTGRES_DB: punchpad
     ports:
-      - "5432:5432"
+      - "54329:5432"
     volumes:
       - punchpad_pgdata:/var/lib/postgresql/data
 

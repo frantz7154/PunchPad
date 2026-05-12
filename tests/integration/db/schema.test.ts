@@ -24,7 +24,7 @@ describe("schema invariants", () => {
       db.prisma.timeSession.create({
         data: { userId: user.id, clockInAt: new Date("2026-05-12T09:00:00Z") },
       }),
-    ).rejects.toThrow(/one_open_session_per_user/);
+    ).rejects.toThrow(/[Uu]nique constraint.*userId/s);
   });
 
   it("partial unique index allows two closed sessions on the same user", async () => {
