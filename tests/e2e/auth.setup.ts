@@ -1,17 +1,37 @@
+import "dotenv/config";
 import { test as setup } from "@playwright/test";
 import { encode } from "next-auth/jwt";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@/generated/prisma/client";
+import { Client } from "pg";
 import path from "node:path";
 import fs from "node:fs/promises";
 
 const SECRET = process.env.NEXTAUTH_SECRET ?? "dev-secret-32-chars-aaaaaaaaaaaaa";
 
+async function fetchUser(email: string) {
+  const client = new Client({ connectionString: process.env.DATABASE_URL! });
+  await client.connect();
+  try {
+    const r = await client.query(
+      `SELECT id, email, name, role, timezone, "mustChangePassword"
+       FROM "User" WHERE email = $1`,
+      [email],
+    );
+    if (r.rows.length === 0) throw new Error(`No user with email ${email}`);
+    return r.rows[0] as {
+      id: string;
+      email: string;
+      name: string;
+      role: "EMPLOYEE" | "ADMIN";
+      timezone: string;
+      mustChangePassword: boolean;
+    };
+  } finally {
+    await client.end();
+  }
+}
+
 async function storageStateFor(email: string) {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-  const prisma = new PrismaClient({ adapter });
-  const user = await prisma.user.findUniqueOrThrow({ where: { email } });
-  await prisma.$disconnect();
+  const user = await fetchUser(email);
   const token = await encode({
     salt: "authjs.session-token",
     secret: SECRET,

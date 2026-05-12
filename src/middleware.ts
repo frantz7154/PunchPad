@@ -1,9 +1,12 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
+import { authConfig } from "@/lib/auth.config";
+
+const { auth: middlewareAuth } = NextAuth(authConfig);
 
 const PROTECTED_PREFIXES = ["/clock", "/calendar", "/reports", "/admin"];
 
-export default auth((req) => {
+export default middlewareAuth((req) => {
   const path = req.nextUrl.pathname;
   const needsAuth = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
   if (!needsAuth) return NextResponse.next();
