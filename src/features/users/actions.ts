@@ -17,7 +17,7 @@ export async function changeOwnPasswordAction(input: unknown) {
     const data = schema.parse(input);
     await changeOwnPassword(prisma, user.id, data.currentPassword, data.newPassword);
     revalidatePath("/clock");
-    return { ok: true as const };
+    return { ok: true as const, email: user.email };
   } catch (err) {
     return toErrorEnvelope(err);
   }

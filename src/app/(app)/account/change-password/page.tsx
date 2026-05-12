@@ -1,13 +1,12 @@
 "use client";
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { changeOwnPasswordAction } from "@/features/users/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 export default function ChangePasswordPage() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -21,18 +20,24 @@ export default function ChangePasswordPage() {
         onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
+          const newPassword = fd.get("newPassword") as string;
           startTransition(async () => {
             setError(null);
             const res = await changeOwnPasswordAction({
               currentPassword: fd.get("currentPassword"),
-              newPassword: fd.get("newPassword"),
+              newPassword,
             });
             if (!("ok" in res) || !res.ok) {
               setError("message" in res ? res.message : "Unknown error");
               return;
             }
-            router.push("/clock");
-            router.refresh();
+            // Force a fresh JWT with mustChangePassword=false by re-authenticating in place.
+            await signIn("credentials", {
+              email: res.email,
+              password: newPassword,
+              redirect: true,
+              callbackUrl: "/clock",
+            });
           });
         }}
         className="flex flex-col gap-4"
