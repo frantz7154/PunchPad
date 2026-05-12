@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,89 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  name               String
+  passwordHash       String
+  role               Role      @default(EMPLOYEE)
+  timezone           String    @default("America/Chicago")
+  mustChangePassword Boolean   @default(false)
+  deactivatedAt      DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  sessions  TimeSession[]
+  auditLogs AuditLog[]    @relation("ActorAuditLogs")
+}
+
+enum Role {
+  EMPLOYEE
+  ADMIN
+}
+
+model TimeSession {
+  id         String    @id @default(cuid())
+  userId     String
+  clockInAt  DateTime
+  clockOutAt DateTime?
+  autoClosed Boolean   @default(false)
+  warnedAt   DateTime?
+  notes      String?
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id])
+  auditLogs AuditLog[]
+
+  @@index([userId, clockInAt])
+}
+
+model AuditLog {
+  id              String      @id @default(cuid())
+  actorUserId     String
+  targetSessionId String?
+  action          AuditAction
+  before          Json?
+  after           Json?
+  reason          String?
+  at              DateTime    @default(now())
+
+  actor   User         @relation("ActorAuditLogs", fields: [actorUserId], references: [id])
+  session TimeSession? @relation(fields: [targetSessionId], references: [id])
+
+  @@index([targetSessionId, at])
+  @@index([actorUserId, at])
+}
+
+enum AuditAction {
+  CLOCK_IN
+  CLOCK_OUT
+  EDIT_SESSION
+  DELETE_SESSION
+  AUTO_CLOSE
+  CREATE_USER
+  DEACTIVATE_USER
+  ROLE_CHANGE
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  succeeded Boolean
+  at        DateTime @default(now())
+
+  @@index([email, at])
+}
+
+model DigestSend {
+  id      String   @id @default(cuid())
+  userId  String
+  isoWeek String
+  sentAt  DateTime @default(now())
+
+  @@unique([userId, isoWeek])
 }
