@@ -54,3 +54,5 @@ next-env.d.ts
 prisma/*.db
 pgdata/
 backups/
+
+/src/generated/prisma
