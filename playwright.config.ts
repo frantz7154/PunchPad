@@ -29,7 +29,7 @@ export default defineConfig({
     },
     {
       name: "chromium-public",
-      testMatch: /(auth\/|sanity\.spec\.ts)/,
+      testMatch: /(auth\/|cron\/|sanity\.spec\.ts)/,
       use: { ...devices["Desktop Chrome"] },
     },
   ],
