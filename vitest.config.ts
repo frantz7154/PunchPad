@@ -13,6 +13,7 @@ export default defineConfig({
           name: "unit",
           include: ["tests/unit/**/*.test.ts"],
           environment: "node",
+          env: { SKIP_ENV_VALIDATION: "1" },
         },
       },
       {
