@@ -17,20 +17,20 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "chromium-admin",
+      testMatch: /(admin|sanity)\/.*\.spec\.ts$|admin\.spec\.ts$/,
       use: { ...devices["Desktop Chrome"], storageState: "tests/e2e/storage/admin.json" },
       dependencies: ["setup"],
-      testIgnore: /auth\.setup\.ts$/,
     },
     {
       name: "chromium-emp",
+      testMatch: /(clock|calendar|theme)\/.*\.spec\.ts$/,
       use: { ...devices["Desktop Chrome"], storageState: "tests/e2e/storage/emp.json" },
       dependencies: ["setup"],
-      testIgnore: /auth\.setup\.ts$/,
     },
     {
       name: "chromium-public",
+      testMatch: /(auth\/|sanity\.spec\.ts)/,
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: /auth\.setup\.ts$/,
     },
   ],
   webServer: process.env.PLAYWRIGHT_NO_WEBSERVER
