@@ -9,7 +9,7 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: 
 
 export const metadata: Metadata = {
   title: "PunchPad",
-  description: "Lexcom attendance tracking",
+  description: "Self-hosted clock-in/out attendance tracker.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
