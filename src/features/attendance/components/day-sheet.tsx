@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useTransition } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,23 +28,22 @@ export function DaySheet({
 }) {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [isPending, startTransition] = useTransition();
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(() => {
     if (!date) return;
-    setLoading(true);
-    try {
+    startTransition(async () => {
       const r = await fetch(`/api/me/sessions?date=${date}`, { cache: "no-store" });
       const j = await r.json();
       setSessions(j.sessions ?? []);
-    } finally {
-      setLoading(false);
-    }
+      setNow(Date.now());
+    });
   }, [date]);
 
   useEffect(() => {
     if (!open || !date) return;
-    void reload();
+    reload();
   }, [open, date, reload]);
 
   const fmt = new Intl.DateTimeFormat("en-US", {
@@ -59,7 +58,7 @@ export function DaySheet({
         <SheetHeader>
           <SheetTitle>{date}</SheetTitle>
         </SheetHeader>
-        {loading ? (
+        {isPending ? (
           <p className="text-sm text-[var(--text-dim)]">Loading…</p>
         ) : sessions.length === 0 ? (
           <p className="text-sm text-[var(--text-dim)]" data-testid="day-sheet-empty">
@@ -68,7 +67,7 @@ export function DaySheet({
         ) : (
           <ul className="mt-4 space-y-3" data-testid="day-sheet-list">
             {sessions.map((s) => {
-              const inWindow = Date.now() - new Date(s.clockInAt).getTime() <= SEVEN_DAYS_MS;
+              const inWindow = now - new Date(s.clockInAt).getTime() <= SEVEN_DAYS_MS;
               const isEditing = editing === s.id;
               return (
                 <li

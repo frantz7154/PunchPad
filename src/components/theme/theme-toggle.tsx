@@ -1,23 +1,39 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 
 type Mode = "light" | "dark" | "system";
+
+const STORAGE_KEY = "punchpad-theme";
+const CHANGE_EVENT = "punchpad-theme-changed";
 
 function apply(mode: Mode) {
   const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const actual = mode === "system" ? (isSystemDark ? "dark" : "light") : mode;
   document.documentElement.setAttribute("data-theme", actual);
-  localStorage.setItem("punchpad-theme", mode);
+  localStorage.setItem(STORAGE_KEY, mode);
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+function subscribe(cb: () => void): () => void {
+  window.addEventListener(CHANGE_EVENT, cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+
+function getSnapshot(): Mode {
+  return (localStorage.getItem(STORAGE_KEY) as Mode | null) ?? "system";
+}
+
+function getServerSnapshot(): Mode {
+  return "system";
 }
 
 export function ThemeToggle() {
-  const [mode, setMode] = useState<Mode>("dark");
-
-  useEffect(() => {
-    const stored = (localStorage.getItem("punchpad-theme") as Mode | null) ?? "system";
-    setMode(stored);
-  }, []);
+  const mode = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const next: Mode = mode === "light" ? "dark" : mode === "dark" ? "system" : "light";
   const label = mode === "light" ? "Light" : mode === "dark" ? "Dark" : "System";
@@ -30,10 +46,7 @@ export function ThemeToggle() {
       aria-label={`Theme: ${label}. Click to switch.`}
       data-testid="theme-toggle"
       data-theme-mode={mode}
-      onClick={() => {
-        setMode(next);
-        apply(next);
-      }}
+      onClick={() => apply(next)}
     >
       {label}
     </Button>

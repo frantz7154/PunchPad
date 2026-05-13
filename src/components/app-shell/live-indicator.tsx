@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 export function LiveIndicator({ userId }: { userId: string }) {
   const [open, setOpen] = useState<{ clockInAt: string } | null>(null);
-  const [tick, setTick] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     let cancel = false;
@@ -14,12 +14,18 @@ export function LiveIndicator({ userId }: { userId: string }) {
       else setOpen(null);
     }
     void load();
-    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    const id = setInterval(load, 30_000);
     return () => {
       cancel = true;
       clearInterval(id);
     };
-  }, [userId, tick]);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, [open]);
 
   if (!open) {
     return (
@@ -29,7 +35,7 @@ export function LiveIndicator({ userId }: { userId: string }) {
     );
   }
   const inAt = new Date(open.clockInAt).getTime();
-  const elapsed = Math.max(0, Date.now() - inAt);
+  const elapsed = Math.max(0, now - inAt);
   const h = Math.floor(elapsed / 3_600_000);
   const m = Math.floor((elapsed % 3_600_000) / 60_000);
   return (

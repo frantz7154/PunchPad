@@ -23,7 +23,10 @@ export function RangePicker({ users }: { users?: Array<{ id: string; name: strin
 
   function setQuery(updates: Record<string, string | null>) {
     const sp = new URLSearchParams(params);
-    for (const [k, v] of Object.entries(updates)) v === null ? sp.delete(k) : sp.set(k, v);
+    for (const [k, v] of Object.entries(updates)) {
+      if (v === null) sp.delete(k);
+      else sp.set(k, v);
+    }
     router.push(`${path}?${sp.toString()}`);
   }
 
