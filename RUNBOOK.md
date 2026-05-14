@@ -55,6 +55,29 @@ gunzip -c backups/punchpad-YYYY-MM-DD.sql.gz \
 docker compose start web cron
 ```
 
+## Recover lost admin password
+
+Phase 1 has no email-based password reset (Phase 2 P3 candidate). If an admin forgets their password — or you need to bootstrap a new admin because the seed skipped (some other admin already existed) — use the CLI utility from a checkout of the repo with dependencies installed:
+
+```bash
+cd /opt/punchpad
+pnpm exec tsx scripts/reset-password.ts <email> "<new-password>"
+```
+
+The script:
+
+- Requires the new password to be ≥12 characters (matches the app's policy).
+- Hashes with Argon2id, same parameters as the live app.
+- Sets the password, clears `mustChangePassword`, reactivates the account if `deactivatedAt` was set, and clears recent `LoginAttempt` rows so the lockout counter resets.
+- Errors if the user does not exist. To create a missing admin, add `--create-admin --name "Full Name"`:
+
+```bash
+pnpm exec tsx scripts/reset-password.ts admin@example.com "ChangeMeNow!23" \
+  --create-admin --name "Site Admin"
+```
+
+**Phase 1.1 follow-up:** the production `runner` Docker stage uses Next.js's standalone output and does not include `scripts/` or `tsx`. To run this script on a production VM, either (a) keep a full checkout of the repo on the host outside the container and run `pnpm install && pnpm exec tsx ...`, or (b) extend the Dockerfile to ship `scripts/` and a minimal Node toolchain into a separate stage. The password argument is briefly visible in `ps` output and shell history — prefix with a space (with `HISTCONTROL=ignorespace`) if that matters.
+
 ## Cron health checks
 
 - Tail watchdog logs: `docker compose logs cron --tail=200`
